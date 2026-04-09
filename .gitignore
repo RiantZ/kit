@@ -39,3 +39,21 @@
 
 # debug information files
 *.dwo
+
+# CMake build directories
+build/
+_build*/
+_Build*/
+cmake-build-*/
+out/
+
+# CMake generated files
+CMakeUserPresets.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
