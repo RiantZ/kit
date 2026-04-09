@@ -3,6 +3,7 @@
 #include <kit/kit.h>
 
 #include "list_test.hpp"
+#include "spin_lock_test.hpp"
 #include "shared_test.hpp"
 
 TEST(VersionTest, ReturnsNonEmpty)
