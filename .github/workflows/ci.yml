@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: Linux (GCC)
+            cmake_args: ""
+          - os: macos-14
+            name: macOS (AppleClang)
+            cmake_args: ""
+          - os: windows-2022
+            name: Windows (MSVC)
+            cmake_args: ""
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake 4.x
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~4.0"
+
+      - name: Configure
+        run: cmake -B build ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build --config Release --output-on-failure
