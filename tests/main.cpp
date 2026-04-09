@@ -1,0 +1,18 @@
+#include <gtest/gtest.h>
+
+#include <kit/kit.h>
+
+#include "list_test.hpp"
+#include "shared_test.hpp"
+
+TEST(VersionTest, ReturnsNonEmpty)
+{
+    const char *lp_version = kit_version();
+    ASSERT_NE(lp_version, nullptr);
+    EXPECT_GT(strlen(lp_version), 0u);
+}
+
+TEST(VersionTest, MatchesMacro)
+{
+    EXPECT_STREQ(kit_version(), KIT_VERSION_STRING);
+}
