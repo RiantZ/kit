@@ -5,6 +5,7 @@
 #include "kit/ts_helpers.h"
 #include "kit/types.h"
 #include "kit/list.hpp"
+#include "kit/spin_lock.hpp"
 #include "kit/shared_mem.hpp"
 
 #ifdef __cplusplus
