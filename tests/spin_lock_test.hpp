@@ -40,8 +40,10 @@ float get_miter_per_second(uint64_t                                             
 #if defined(_MSC_VER)
     #pragma optimize("", off)
     int32_t sum_million()
-#elif defined(__clang__) || defined(__GNUC__)
+#elif defined(__clang__)
     __attribute__((optnone)) int32_t sum_million()
+#elif defined(__GNUC__)
+    __attribute__((optimize("O0"))) int32_t sum_million()
 #else
     int32_t sum_million()
 #endif
