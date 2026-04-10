@@ -1,5 +1,6 @@
 #include "kit/shared_mem.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
