@@ -57,3 +57,5 @@ CMakeUserPresets.json
 *.swo
 *~
 .DS_Store
+
+scripts/__pycache__/**

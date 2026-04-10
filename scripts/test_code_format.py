@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import subprocess
 import pytest
 from pathlib import Path
@@ -325,3 +326,66 @@ class TestCheckClangFormatVersion:
             with pytest.raises(SystemExit):
                 cf.check_clang_format_version(min_major=20)
         assert "20" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# load_project_config / get_exclude_patterns
+# ---------------------------------------------------------------------------
+
+
+class TestLoadProjectConfig:
+    def test_returns_empty_dict_when_no_config(self, tmp_path):
+        assert cf.load_project_config(tmp_path) == {}
+
+    def test_loads_config_from_json(self, tmp_path):
+        config = {"exclude_patterns": [["dir", "^vendor"]]}
+        (tmp_path / cf.CONFIG_FILE_NAME).write_text(json.dumps(config))
+
+        result = cf.load_project_config(tmp_path)
+
+        assert result == config
+
+    def test_returns_empty_dict_for_directory_named_as_config(self, tmp_path):
+        (tmp_path / cf.CONFIG_FILE_NAME).mkdir()
+
+        assert cf.load_project_config(tmp_path) == {}
+
+
+class TestGetExcludePatterns:
+    def test_returns_defaults_when_no_config(self, tmp_path):
+        result = cf.get_exclude_patterns(tmp_path)
+
+        assert result == cf.DEFAULT_EXCLUDE_PATTERNS
+
+    def test_returns_patterns_from_config(self, tmp_path):
+        config = {
+            "exclude_patterns": [
+                ["dir", "^_Build"],
+                ["dir", "^\\.git$"],
+                ["file", "_lib$"],
+            ]
+        }
+        (tmp_path / cf.CONFIG_FILE_NAME).write_text(json.dumps(config))
+
+        result = cf.get_exclude_patterns(tmp_path)
+
+        assert result == (
+            ("dir", "^_Build"),
+            ("dir", r"^\.git$"),
+            ("file", "_lib$"),
+        )
+
+    def test_config_patterns_are_tuples(self, tmp_path):
+        config = {"exclude_patterns": [["any", "test"]]}
+        (tmp_path / cf.CONFIG_FILE_NAME).write_text(json.dumps(config))
+
+        result = cf.get_exclude_patterns(tmp_path)
+
+        assert all(isinstance(p, tuple) for p in result)
+
+    def test_config_without_exclude_patterns_returns_defaults(self, tmp_path):
+        (tmp_path / cf.CONFIG_FILE_NAME).write_text(json.dumps({"other_key": 42}))
+
+        result = cf.get_exclude_patterns(tmp_path)
+
+        assert result == cf.DEFAULT_EXCLUDE_PATTERNS

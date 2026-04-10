@@ -19,6 +19,7 @@ python3 -m pytest scripts/test_code_format.py -v -s
 
 import subprocess
 import argparse
+import json
 import os
 import re
 import sys
@@ -31,13 +32,35 @@ git_project_root_path = Path(
 # Configuration
 INLCUDE_EXTENSIONS = (".cpp", ".h", ".hpp", ".c")
 CLANG_FORMAT_FILE_PATH = os.path.join(git_project_root_path, ".clang-format")
-EXCLUDE_PATTERNS = (
+DEFAULT_EXCLUDE_PATTERNS = (
     ("dir", r"^_Build"),  # prefix: directory starts with "_Build"
     ("dir", r"^_$"),      # exact:  directory equals "_"
     ("dir", r"^\.git$"),  # exact:  directory equals ".git"
     ("file", r"_lib$"),   # suffix: filename ends with "_lib"
 )
 FILES_PROCESSING_BATCH_SIZE = 8
+CONFIG_FILE_NAME = ".code_format.json"
+
+
+def load_project_config(project_root: Path = None) -> dict:
+    """Load project-level config from .code_format.json if it exists."""
+    root = project_root or git_project_root_path
+    config_path = root / CONFIG_FILE_NAME
+    if config_path.is_file():
+        with open(config_path, "r") as f:
+            return json.load(f)
+    return {}
+
+
+def get_exclude_patterns(project_root: Path = None) -> tuple:
+    """Return EXCLUDE_PATTERNS from config file, or defaults if no config."""
+    config = load_project_config(project_root)
+    if "exclude_patterns" in config:
+        return tuple(tuple(p) for p in config["exclude_patterns"])
+    return DEFAULT_EXCLUDE_PATTERNS
+
+
+EXCLUDE_PATTERNS = get_exclude_patterns()
 
 
 # ***********************************************************************************************************************
