@@ -14,13 +14,17 @@
       "binaryDir": "${sourceDir}/_Build_mac",
       "cacheVariables": {
         "KIT_BUILD_SCRIPT": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_OSX_SYSROOT": "macosx"
       }
     },
     {
       "name": "linux",
       "binaryDir": "${sourceDir}/_Build_lnx",
-      "cacheVariables": { "KIT_BUILD_SCRIPT": "ON" }
+      "cacheVariables": {
+        "KIT_BUILD_SCRIPT": "ON",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ]
 }
