@@ -16,17 +16,20 @@ jobs:
             name: Linux (GCC)
             preset: linux
             build_dir: _Build_lnx
-            config_flag: ""
+            build_config_flag: ""
+            test_config_flag: ""
           - os: macos-14
             name: macOS (AppleClang)
             preset: macos
             build_dir: _Build_mac
-            config_flag: ""
+            build_config_flag: ""
+            test_config_flag: ""
           - os: windows-2022
             name: Windows (MSVC)
             preset: windows
             build_dir: _Build_wnd
-            config_flag: "--config Release"
+            build_config_flag: "--config Release"
+            test_config_flag: "-C Release"
 
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -43,7 +46,7 @@ jobs:
         run: cmake --preset ${{ matrix.preset }}
 
       - name: Build
-        run: cmake --build ${{ matrix.build_dir }} ${{ matrix.config_flag }}
+        run: cmake --build ${{ matrix.build_dir }} ${{ matrix.build_config_flag }}
 
       - name: Test
-        run: ctest --test-dir ${{ matrix.build_dir }} ${{ matrix.config_flag }} --output-on-failure
+        run: ctest --test-dir ${{ matrix.build_dir }} ${{ matrix.test_config_flag }} --output-on-failure
