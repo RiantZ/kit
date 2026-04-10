@@ -14,13 +14,16 @@ jobs:
         include:
           - os: ubuntu-24.04
             name: Linux (GCC)
-            cmake_args: ""
+            preset: linux
+            build_dir: _Build_lnx
           - os: macos-14
             name: macOS (AppleClang)
-            cmake_args: ""
+            preset: macos
+            build_dir: _Build_mac
           - os: windows-2022
             name: Windows (MSVC)
-            cmake_args: ""
+            preset: windows
+            build_dir: _Build_wnd
 
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -34,10 +37,10 @@ jobs:
           cmakeVersion: "~4.0"
 
       - name: Configure
-        run: cmake -B build ${{ matrix.cmake_args }}
+        run: cmake --preset ${{ matrix.preset }}
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build ${{ matrix.build_dir }} --config Release
 
       - name: Test
-        run: ctest --test-dir build --config Release --output-on-failure
+        run: ctest --test-dir ${{ matrix.build_dir }} --config Release --output-on-failure
