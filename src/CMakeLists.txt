@@ -3,11 +3,11 @@ set(KIT_SOURCES
 )
 
 if(KIT_PLATFORM_LINUX)
-    list(APPEND KIT_SOURCES shared/shared_linux.cpp)
+    list(APPEND KIT_SOURCES shared/shared_linux.cpp time/time_linux.cpp)
 elseif(KIT_PLATFORM_DARWIN)
-    list(APPEND KIT_SOURCES shared/shared_macos.cpp)
+    list(APPEND KIT_SOURCES shared/shared_macos.cpp time/time_macos.cpp)
 elseif(KIT_PLATFORM_WINDOWS)
-    list(APPEND KIT_SOURCES shared/shared_win32.cpp)
+    list(APPEND KIT_SOURCES shared/shared_win32.cpp time/time_win32.cpp)
 endif()
 
 add_library(kit_obj OBJECT ${KIT_SOURCES})
