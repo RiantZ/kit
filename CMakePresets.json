@@ -15,7 +15,8 @@
       "cacheVariables": {
         "KIT_BUILD_SCRIPT": "ON",
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_OSX_SYSROOT": "macosx"
+        "CMAKE_OSX_SYSROOT": "macosx",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
@@ -23,7 +24,8 @@
       "binaryDir": "${sourceDir}/_Build_lnx",
       "cacheVariables": {
         "KIT_BUILD_SCRIPT": "ON",
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }
   ]
