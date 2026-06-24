@@ -593,7 +593,7 @@ public:
 
     /// @brief Removes all elements from the list and applies a cleanup function to each
     /// @param if_callback Lambda function to handle resource cleanup for each element's data
-    template <class tlFn> inline void clear(tlFn il_callback)
+    template <class t_fn> inline void clear(t_fn il_callback)
     {
         while(&mo_null_item != mp_first)
         {
@@ -654,7 +654,7 @@ public:
     /// @param ir_it Iterator pointing to the element to remove
     /// @param if_callback Lambda function to handle resource cleanup for the element's data
     /// @return Iterator pointing to the next element after removal
-    template <class tlFn> inline t_iterator remove(const t_iterator &ir_it, tlFn il_callback)
+    template <class t_fn> inline t_iterator remove(const t_iterator &ir_it, t_fn il_callback)
     {
         if(ir_it.mp_iter != &mo_null_item)
         {

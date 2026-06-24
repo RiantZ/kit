@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-06-24
+
+### Added
+- `thread.hpp` - cross-platform thread priority API (`kit::get_thread_priority` / `kit::set_thread_priority`) with abstract `e_thread_priority` levels; platform implementations (Linux, macOS, Windows)
+- `thread.hpp` exposed via the `kit/kit.h` aggregator header
+- Test suite for thread priority (`tests/thread_test.hpp`)
+
+### Changed
+- `shared` module internals renamed to follow `doc/code_style.md` conventions; public function signatures unchanged
+- Minor naming fixes in `types.h` (`pstr_dup` / `pstr_free_dup` parameters) and `list.hpp` (template parameter)
+
 ## [0.1.0] - 2026-04-09
 
 ### Added

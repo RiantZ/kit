@@ -8,6 +8,7 @@
 #include "kit/spin_lock.hpp"
 #include "kit/shared_mem.hpp"
 #include "kit/event.hpp"
+#include "kit/thread.hpp"
 
 #ifdef __cplusplus
 extern "C"

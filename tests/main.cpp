@@ -6,6 +6,7 @@
 #include "spin_lock_test.hpp"
 #include "shared_test.hpp"
 #include "event_test.hpp"
+#include "thread_test.hpp"
 
 TEST(VersionTest, ReturnsNonEmpty)
 {

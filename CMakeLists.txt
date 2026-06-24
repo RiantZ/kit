@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
-project(kit VERSION 0.1.0 LANGUAGES C CXX)
+project(kit VERSION 0.2.0 LANGUAGES C CXX)
 
 if(PROJECT_IS_TOP_LEVEL AND NOT KIT_BUILD_SCRIPT)
     message(FATAL_ERROR

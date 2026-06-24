@@ -8,13 +8,13 @@
 #include "kit/ts_helpers.h"
 
 #ifdef G_OS_WINDOWS
-inline wchar_t *pstr_dup(const wchar_t *i_pStr)
+inline wchar_t *pstr_dup(const wchar_t *ip_str)
 {
-    return _wcsdup(i_pStr);
+    return _wcsdup(ip_str);
 }
 
-inline void pstr_free_dup(wchar_t *i_pStr)
+inline void pstr_free_dup(wchar_t *ip_str)
 {
-    free(i_pStr);
+    free(ip_str);
 }
 #endif

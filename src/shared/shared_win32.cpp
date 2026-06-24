@@ -15,39 +15,39 @@ enum e_type
     e_type_max
 };
 
-bool create_name(tXCHAR *o_pName, size_t i_szName, e_type i_eType, const tXCHAR *i_pPostfix)
+bool create_name(tXCHAR *op_name, size_t iz_name, e_type ie_type, const tXCHAR *ip_postfix)
 {
-    if((nullptr == o_pName) || (16 >= i_szName) || (e_type_max <= i_eType) || (nullptr == i_pPostfix))
+    if((nullptr == op_name) || (16 >= iz_name) || (e_type_max <= ie_type) || (nullptr == ip_postfix))
     {
         return false;
     }
 
-    FILETIME l_tProcess_Time = { 0 };
-    FILETIME l_tStub_01      = { 0 };
-    FILETIME l_tStub_02      = { 0 };
-    FILETIME l_tStub_03      = { 0 };
+    FILETIME ls_process_time = { 0 };
+    FILETIME ls_stub_01      = { 0 };
+    FILETIME ls_stub_02      = { 0 };
+    FILETIME ls_stub_03      = { 0 };
 
-    GetProcessTimes(GetCurrentProcess(), &l_tProcess_Time, &l_tStub_01, &l_tStub_02, &l_tStub_03);
+    GetProcessTimes(GetCurrentProcess(), &ls_process_time, &ls_stub_01, &ls_stub_02, &ls_stub_03);
 
-    if(e_type_mutex == i_eType)
+    if(e_type_mutex == ie_type)
     {
-        swprintf_s(o_pName,
-                   i_szName,
+        swprintf_s(op_name,
+                   iz_name,
                    L"Local\\m%d%d%d%s",
                    GetCurrentProcessId(),
-                   l_tProcess_Time.dwHighDateTime,
-                   l_tProcess_Time.dwLowDateTime,
-                   i_pPostfix);
+                   ls_process_time.dwHighDateTime,
+                   ls_process_time.dwLowDateTime,
+                   ip_postfix);
     }
-    else if(e_type_file == i_eType)
+    else if(e_type_file == ie_type)
     {
-        swprintf_s(o_pName,
-                   i_szName,
+        swprintf_s(op_name,
+                   iz_name,
                    L"Local\\f%d%d%d%s",
                    GetCurrentProcessId(),
-                   l_tProcess_Time.dwHighDateTime,
-                   l_tProcess_Time.dwLowDateTime,
-                   i_pPostfix);
+                   ls_process_time.dwHighDateTime,
+                   ls_process_time.dwLowDateTime,
+                   ip_postfix);
     }
 
     return true;
@@ -58,420 +58,420 @@ bool create_name(tXCHAR *o_pName, size_t i_szName, e_type i_eType, const tXCHAR 
 ////////////////////////////////////////////////////////////////////////////////
 struct c_shared::s_shared
 {
-    HANDLE  hMemory;
-    HANDLE  hMutex;
-    tXCHAR *pName;
+    HANDLE  mh_memory;
+    HANDLE  mh_mutex;
+    tXCHAR *mp_name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::create
-bool c_shared::create(h_shared *o_pHandle, const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize)
+bool c_shared::create(h_shared *op_handle, const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size)
 {
-    s_shared *l_pShared  = nullptr;
-    bool      l_bReturn  = true;
-    DWORD     l_dwLen    = 0;
-    wchar_t  *l_pName    = nullptr;
-    BOOL      l_bRelease = FALSE;
-    uint8_t  *l_pBuffer  = nullptr;
+    s_shared *lp_shared  = nullptr;
+    bool      lb_return  = true;
+    DWORD     lu_len     = 0;
+    wchar_t  *lp_name    = nullptr;
+    BOOL      lb_release = FALSE;
+    uint8_t  *lp_buffer  = nullptr;
 
-    if((nullptr == i_pName) || (nullptr == i_pData) || (0 >= i_wSize) || (nullptr == o_pHandle))
+    if((nullptr == ip_name) || (nullptr == ip_data) || (0 >= iu_size) || (nullptr == op_handle))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_pShared = new s_shared;
-    if(nullptr == l_pShared)
+    lp_shared = new s_shared;
+    if(nullptr == lp_shared)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    memset(l_pShared, 0, sizeof(s_shared));
+    memset(lp_shared, 0, sizeof(s_shared));
 
-    l_dwLen          = (DWORD)wcslen(i_pName) + 128;
-    l_pName          = (wchar_t *)malloc(sizeof(wchar_t) * l_dwLen);
-    l_pShared->pName = pstr_dup(i_pName);
+    lu_len             = (DWORD)wcslen(ip_name) + 128;
+    lp_name            = (wchar_t *)malloc(sizeof(wchar_t) * lu_len);
+    lp_shared->mp_name = pstr_dup(ip_name);
 
-    if((nullptr == l_pName) || (nullptr == l_pShared->pName))
+    if((nullptr == lp_name) || (nullptr == lp_shared->mp_name))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // create mutex and own it
-    create_name(l_pName, l_dwLen, e_type_mutex, i_pName);
+    create_name(lp_name, lu_len, e_type_mutex, ip_name);
 
-    l_pShared->hMutex = CreateMutexW(nullptr, TRUE, l_pName);
-    if((nullptr == l_pShared->hMutex) || (ERROR_ALREADY_EXISTS == GetLastError()))
+    lp_shared->mh_mutex = CreateMutexW(nullptr, TRUE, lp_name);
+    if((nullptr == lp_shared->mh_mutex) || (ERROR_ALREADY_EXISTS == GetLastError()))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_bRelease = TRUE;
+    lb_release = TRUE;
 
     ////////////////////////////////////////////////////////////////////////////
     // create shared memory object
-    create_name(l_pName, l_dwLen, e_type_file, i_pName);
+    create_name(lp_name, lu_len, e_type_file, ip_name);
 
-    l_pShared->hMemory = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, i_wSize, l_pName);
+    lp_shared->mh_memory = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, iu_size, lp_name);
 
-    if((nullptr == l_pShared->hMemory) || (ERROR_ALREADY_EXISTS == GetLastError()))
+    if((nullptr == lp_shared->mh_memory) || (ERROR_ALREADY_EXISTS == GetLastError()))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = (uint8_t *)MapViewOfFile(l_pShared->hMemory, FILE_MAP_ALL_ACCESS, 0, 0, i_wSize);
+    lp_buffer = (uint8_t *)MapViewOfFile(lp_shared->mh_memory, FILE_MAP_ALL_ACCESS, 0, 0, iu_size);
 
-    if(nullptr == l_pBuffer)
+    if(nullptr == lp_buffer)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    *o_pHandle = (c_shared::h_shared)l_pShared;
+    *op_handle = (c_shared::h_shared)lp_shared;
 
     __try
     {
-        memcpy(l_pBuffer, i_pData, i_wSize);
+        memcpy(lp_buffer, ip_data, iu_size);
     }
 
     __except(GetExceptionCode() == EXCEPTION_IN_PAGE_ERROR ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(l_pBuffer)
+    if(lp_buffer)
     {
-        UnmapViewOfFile(l_pBuffer);
-        l_pBuffer = nullptr;
+        UnmapViewOfFile(lp_buffer);
+        lp_buffer = nullptr;
     }
 
-    if(l_bRelease)
+    if(lb_release)
     {
-        ReleaseMutex(l_pShared->hMutex);
+        ReleaseMutex(lp_shared->mh_mutex);
     }
 
-    if(!l_bReturn)
+    if(!lb_return)
     {
-        close((h_shared)l_pShared);
-        l_pShared = nullptr;
+        close((h_shared)lp_shared);
+        lp_shared = nullptr;
 
-        if(o_pHandle)
+        if(op_handle)
         {
-            *o_pHandle = nullptr;
+            *op_handle = nullptr;
         }
     }
 
-    return l_bReturn;
+    return lb_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::read
-bool c_shared::read(const tXCHAR *i_pName, void *o_pData, uint16_t i_wSize)
+bool c_shared::read(const tXCHAR *ip_name, void *op_data, uint16_t iu_size)
 {
-    HANDLE   l_hMemory = nullptr;
-    bool     l_bReturn = true;
-    DWORD    l_dwLen   = 0;
-    wchar_t *l_pName   = nullptr;
-    uint8_t *l_pBuffer = nullptr;
+    HANDLE   lh_memory = nullptr;
+    bool     lb_return = true;
+    DWORD    lu_len    = 0;
+    wchar_t *lp_name   = nullptr;
+    uint8_t *lp_buffer = nullptr;
 
-    if((nullptr == i_pName) || (nullptr == o_pData) || (0 >= i_wSize))
+    if((nullptr == ip_name) || (nullptr == op_data) || (0 >= iu_size))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_dwLen = (DWORD)wcslen(i_pName) + 128;
-    l_pName = (wchar_t *)malloc(sizeof(wchar_t) * l_dwLen);
+    lu_len  = (DWORD)wcslen(ip_name) + 128;
+    lp_name = (wchar_t *)malloc(sizeof(wchar_t) * lu_len);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open shared memory object
-    create_name(l_pName, l_dwLen, e_type_file, i_pName);
+    create_name(lp_name, lu_len, e_type_file, ip_name);
 
-    l_hMemory = OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, l_pName);
+    lh_memory = OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, lp_name);
 
-    if(nullptr == l_hMemory)
+    if(nullptr == lh_memory)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = (uint8_t *)MapViewOfFile(l_hMemory, FILE_MAP_READ, 0, 0, i_wSize);
+    lp_buffer = (uint8_t *)MapViewOfFile(lh_memory, FILE_MAP_READ, 0, 0, iu_size);
 
-    if(nullptr == l_pBuffer)
+    if(nullptr == lp_buffer)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
     __try
     {
-        memcpy(o_pData, l_pBuffer, i_wSize);
+        memcpy(op_data, lp_buffer, iu_size);
     }
 
     __except((GetExceptionCode() == EXCEPTION_IN_PAGE_ERROR) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(l_pBuffer)
+    if(lp_buffer)
     {
-        UnmapViewOfFile(l_pBuffer);
-        l_pBuffer = nullptr;
+        UnmapViewOfFile(lp_buffer);
+        lp_buffer = nullptr;
     }
 
-    if(l_hMemory)
+    if(lh_memory)
     {
-        CloseHandle(l_hMemory);
-        l_hMemory = nullptr;
+        CloseHandle(lh_memory);
+        lh_memory = nullptr;
     }
 
-    return l_bReturn;
+    return lb_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::write
-bool c_shared::write(const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize)
+bool c_shared::write(const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size)
 {
-    HANDLE   l_hMemory = nullptr;
-    bool     l_bReturn = true;
-    DWORD    l_dwLen   = 0;
-    wchar_t *l_pName   = nullptr;
-    uint8_t *l_pBuffer = nullptr;
+    HANDLE   lh_memory = nullptr;
+    bool     lb_return = true;
+    DWORD    lu_len    = 0;
+    wchar_t *lp_name   = nullptr;
+    uint8_t *lp_buffer = nullptr;
 
-    if((nullptr == i_pName) || (nullptr == i_pData) || (0 >= i_wSize))
+    if((nullptr == ip_name) || (nullptr == ip_data) || (0 >= iu_size))
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_dwLen = (DWORD)wcslen(i_pName) + 128;
-    l_pName = (wchar_t *)malloc(sizeof(wchar_t) * l_dwLen);
+    lu_len  = (DWORD)wcslen(ip_name) + 128;
+    lp_name = (wchar_t *)malloc(sizeof(wchar_t) * lu_len);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open shared memory object
-    create_name(l_pName, l_dwLen, e_type_file, i_pName);
+    create_name(lp_name, lu_len, e_type_file, ip_name);
 
-    l_hMemory = OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, l_pName);
+    lh_memory = OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, lp_name);
 
-    if(nullptr == l_hMemory)
+    if(nullptr == lh_memory)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = (uint8_t *)MapViewOfFile(l_hMemory, FILE_MAP_WRITE, 0, 0, i_wSize);
+    lp_buffer = (uint8_t *)MapViewOfFile(lh_memory, FILE_MAP_WRITE, 0, 0, iu_size);
 
-    if(nullptr == l_pBuffer)
+    if(nullptr == lp_buffer)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
     __try
     {
-        memcpy(l_pBuffer, i_pData, i_wSize);
+        memcpy(lp_buffer, ip_data, iu_size);
     }
 
     __except((GetExceptionCode() == EXCEPTION_IN_PAGE_ERROR) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(l_pBuffer)
+    if(lp_buffer)
     {
-        UnmapViewOfFile(l_pBuffer);
-        l_pBuffer = nullptr;
+        UnmapViewOfFile(lp_buffer);
+        lp_buffer = nullptr;
     }
 
-    if(l_hMemory)
+    if(lh_memory)
     {
-        CloseHandle(l_hMemory);
-        l_hMemory = nullptr;
+        CloseHandle(lh_memory);
+        lh_memory = nullptr;
     }
 
-    return l_bReturn;
+    return lb_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::lock
-c_shared::e_lock c_shared::lock(const tXCHAR *i_pName, h_sem &o_rSem, uint32_t i_dwTimeout_ms)
+c_shared::e_lock c_shared::lock(const tXCHAR *ip_name, h_sem &or_sem, uint32_t iu_timeout_ms)
 {
-    HANDLE   l_hMutex  = nullptr;
-    e_lock   l_eReturn = c_shared::e_ok;
-    DWORD    l_dwLen   = 0;
-    wchar_t *l_pName   = nullptr;
+    HANDLE   lh_mutex  = nullptr;
+    e_lock   le_return = c_shared::e_ok;
+    DWORD    lu_len    = 0;
+    wchar_t *lp_name   = nullptr;
 
-    o_rSem             = nullptr;
+    or_sem             = nullptr;
 
-    if(nullptr == i_pName)
+    if(nullptr == ip_name)
     {
-        l_eReturn = c_shared::e_error;
+        le_return = c_shared::e_error;
         goto l_lblExit;
     }
 
-    l_dwLen = (DWORD)wcslen(i_pName) + 128;
-    l_pName = (wchar_t *)malloc(sizeof(wchar_t) * l_dwLen);
+    lu_len  = (DWORD)wcslen(ip_name) + 128;
+    lp_name = (wchar_t *)malloc(sizeof(wchar_t) * lu_len);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_eReturn = c_shared::e_error;
+        le_return = c_shared::e_error;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open mutex and own it
-    create_name(l_pName, l_dwLen, e_type_mutex, i_pName);
+    create_name(lp_name, lu_len, e_type_mutex, ip_name);
 
-    l_hMutex = OpenMutexW(MUTEX_ALL_ACCESS, FALSE, l_pName);
-    if(nullptr == l_hMutex)
+    lh_mutex = OpenMutexW(MUTEX_ALL_ACCESS, FALSE, lp_name);
+    if(nullptr == lh_mutex)
     {
-        l_eReturn = c_shared::e_not_exists;
+        le_return = c_shared::e_not_exists;
         goto l_lblExit;
     }
 
-    if(WAIT_OBJECT_0 != WaitForSingleObject(l_hMutex, i_dwTimeout_ms))
+    if(WAIT_OBJECT_0 != WaitForSingleObject(lh_mutex, iu_timeout_ms))
     {
-        l_eReturn = c_shared::e_timeout;
+        le_return = c_shared::e_timeout;
         goto l_lblExit;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(nullptr != l_hMutex)
+    if(nullptr != lh_mutex)
     {
-        if(c_shared::e_ok == l_eReturn)
+        if(c_shared::e_ok == le_return)
         {
-            o_rSem = (h_sem)l_hMutex;
+            or_sem = (h_sem)lh_mutex;
         }
         else
         {
-            CloseHandle(l_hMutex);
-            l_hMutex = nullptr;
+            CloseHandle(lh_mutex);
+            lh_mutex = nullptr;
         }
     }
 
-    return l_eReturn;
+    return le_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::unlock
-c_shared::e_lock c_shared::unlock(h_sem &io_rSem)
+c_shared::e_lock c_shared::unlock(h_sem &ior_sem)
 {
-    e_lock l_eReturn = c_shared::e_error;
-    HANDLE l_hMutex  = (HANDLE)io_rSem;
+    e_lock le_return = c_shared::e_error;
+    HANDLE lh_mutex  = (HANDLE)ior_sem;
 
-    if(nullptr == io_rSem)
+    if(nullptr == ior_sem)
     {
-        l_eReturn = c_shared::e_not_exists;
+        le_return = c_shared::e_not_exists;
         goto l_lblExit;
     }
 
-    ReleaseMutex(l_hMutex);
+    ReleaseMutex(lh_mutex);
 
 l_lblExit:
-    if(l_hMutex)
+    if(lh_mutex)
     {
-        CloseHandle(l_hMutex);
-        io_rSem = nullptr;
+        CloseHandle(lh_mutex);
+        ior_sem = nullptr;
     }
 
-    return l_eReturn;
+    return le_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::get_name
-const tXCHAR *c_shared::get_name(h_shared i_pShared)
+const tXCHAR *c_shared::get_name(h_shared ih_shared)
 {
-    if(nullptr == i_pShared)
+    if(nullptr == ih_shared)
     {
         return nullptr;
     }
 
-    return i_pShared->pName;
+    return ih_shared->mp_name;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::close
-bool c_shared::close(h_shared i_hShared)
+bool c_shared::close(h_shared ih_shared)
 {
-    if(nullptr == i_hShared)
+    if(nullptr == ih_shared)
     {
         return false;
     }
 
-    if(i_hShared->hMemory)
+    if(ih_shared->mh_memory)
     {
-        CloseHandle(i_hShared->hMemory);
-        i_hShared->hMemory = nullptr;
+        CloseHandle(ih_shared->mh_memory);
+        ih_shared->mh_memory = nullptr;
     }
 
-    if(i_hShared->hMutex)
+    if(ih_shared->mh_mutex)
     {
-        CloseHandle(i_hShared->hMutex);
-        i_hShared->hMutex = nullptr;
+        CloseHandle(ih_shared->mh_mutex);
+        ih_shared->mh_mutex = nullptr;
     }
 
-    if(i_hShared->pName)
+    if(ih_shared->mp_name)
     {
-        pstr_free_dup(i_hShared->pName);
-        i_hShared->pName = nullptr;
+        pstr_free_dup(ih_shared->mp_name);
+        ih_shared->mp_name = nullptr;
     }
 
-    delete i_hShared;
+    delete ih_shared;
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::unlink
-bool c_shared::unlink(const tXCHAR *i_pName)
+bool c_shared::unlink(const tXCHAR *ip_name)
 {
-    UNUSED_ARG(i_pName);
+    UNUSED_ARG(ip_name);
     return true;
 }

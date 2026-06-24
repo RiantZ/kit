@@ -21,19 +21,19 @@ public:
         e_not_exists
     };
 
-    static bool create(h_shared *o_pHandle, const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize);
+    static bool create(h_shared *op_handle, const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size);
 
-    static bool read(const tXCHAR *i_pName, void *o_pData, uint16_t i_wSize);
+    static bool read(const tXCHAR *ip_name, void *op_data, uint16_t iu_size);
 
-    static bool write(const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize);
+    static bool write(const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size);
 
-    static e_lock lock(const tXCHAR *i_pName, h_sem &o_rSem, uint32_t i_dwTimeout_ms);
+    static e_lock lock(const tXCHAR *ip_name, h_sem &or_sem, uint32_t iu_timeout_ms);
 
-    static e_lock unlock(h_sem &io_rSem);
+    static e_lock unlock(h_sem &ior_sem);
 
-    static const tXCHAR *get_name(h_shared i_pShared);
+    static const tXCHAR *get_name(h_shared ih_shared);
 
-    static bool close(h_shared i_pShared);
+    static bool close(h_shared ih_shared);
 
-    static bool unlink(const tXCHAR *i_pName);
+    static bool unlink(const tXCHAR *ip_name);
 };

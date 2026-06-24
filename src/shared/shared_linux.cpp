@@ -23,19 +23,19 @@ enum e_type
     e_type_max
 };
 
-size_t shared_name_len(const char *i_pName)
+size_t shared_name_len(const char *ip_name)
 {
-    return strlen(SHARED_NAME_FORMAT_STRING) + SHARED_NAME_EXTRA_LEN + strlen(i_pName);
+    return strlen(SHARED_NAME_FORMAT_STRING) + SHARED_NAME_EXTRA_LEN + strlen(ip_name);
 }
 
-bool create_name(tXCHAR *o_pName, size_t i_szName, e_type i_eType, const tXCHAR *i_pPostfix)
+bool create_name(tXCHAR *op_name, size_t iz_name, e_type ie_type, const tXCHAR *ip_postfix)
 {
-    if((nullptr == o_pName) || (16 >= i_szName) || (e_type_max <= i_eType) || (nullptr == i_pPostfix))
+    if((nullptr == op_name) || (16 >= iz_name) || (e_type_max <= ie_type) || (nullptr == ip_postfix))
     {
         return false;
     }
 
-    snprintf(o_pName, i_szName, SHARED_NAME_FORMAT_STRING, i_eType, getpid(), i_pPostfix);
+    snprintf(op_name, iz_name, SHARED_NAME_FORMAT_STRING, ie_type, getpid(), ip_postfix);
     return true;
 }
 
@@ -44,497 +44,497 @@ bool create_name(tXCHAR *o_pName, size_t i_szName, e_type i_eType, const tXCHAR 
 ////////////////////////////////////////////////////////////////////////////////
 struct c_shared::s_shared
 {
-    int    iMFD;
-    sem_t *hSemaphore;
-    size_t szName;
-    char  *pName;
-    char  *pSemName;
-    char  *pMemName;
+    int    mi_mfd;
+    sem_t *mh_semaphore;
+    size_t mz_name;
+    char  *mp_name;
+    char  *mp_sem_name;
+    char  *mp_mem_name;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::create
-bool c_shared::create(h_shared *o_pHandle, const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize)
+bool c_shared::create(h_shared *op_handle, const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size)
 {
-    h_shared l_pShared  = nullptr;
-    bool     l_bResult  = true;
-    bool     l_bRelease = false;
-    void    *l_pBuffer  = nullptr;
+    h_shared lp_shared  = nullptr;
+    bool     lb_result  = true;
+    bool     lb_release = false;
+    void    *lp_buffer  = nullptr;
 
-    if((nullptr == i_pName) || (nullptr == i_pData) || (0 >= i_wSize) || (nullptr == o_pHandle))
+    if((nullptr == ip_name) || (nullptr == ip_data) || (0 >= iu_size) || (nullptr == op_handle))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_pShared = (h_shared)malloc(sizeof(s_shared));
-    if(nullptr == l_pShared)
+    lp_shared = (h_shared)malloc(sizeof(s_shared));
+    if(nullptr == lp_shared)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    memset(l_pShared, 0, sizeof(s_shared));
-    l_pShared->hSemaphore = SEM_FAILED;
-    l_pShared->iMFD       = -1;
+    memset(lp_shared, 0, sizeof(s_shared));
+    lp_shared->mh_semaphore = SEM_FAILED;
+    lp_shared->mi_mfd       = -1;
 
-    l_pShared->szName     = shared_name_len(i_pName);
-    l_pShared->pName      = strdup(i_pName);
-    l_pShared->pSemName   = (char *)malloc(l_pShared->szName);
-    l_pShared->pMemName   = (char *)malloc(l_pShared->szName);
+    lp_shared->mz_name      = shared_name_len(ip_name);
+    lp_shared->mp_name      = strdup(ip_name);
+    lp_shared->mp_sem_name  = (char *)malloc(lp_shared->mz_name);
+    lp_shared->mp_mem_name  = (char *)malloc(lp_shared->mz_name);
 
-    if((nullptr == l_pShared->pSemName) || (nullptr == l_pShared->pMemName) || (nullptr == l_pShared->pName))
+    if((nullptr == lp_shared->mp_sem_name) || (nullptr == lp_shared->mp_mem_name) || (nullptr == lp_shared->mp_name))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // create semaphore and own it
-    create_name(l_pShared->pSemName, l_pShared->szName, e_type_mutex, i_pName);
+    create_name(lp_shared->mp_sem_name, lp_shared->mz_name, e_type_mutex, ip_name);
 
-    l_pShared->hSemaphore = sem_open(l_pShared->pSemName, O_CREAT | O_EXCL, 0666, 0);
-    if(SEM_FAILED == l_pShared->hSemaphore)
+    lp_shared->mh_semaphore = sem_open(lp_shared->mp_sem_name, O_CREAT | O_EXCL, 0666, 0);
+    if(SEM_FAILED == lp_shared->mh_semaphore)
     {
-        free(l_pShared->pSemName);
-        l_pShared->pSemName = nullptr;
-        free(l_pShared->pMemName);
-        l_pShared->pMemName = nullptr;
-        l_bResult           = false;
+        free(lp_shared->mp_sem_name);
+        lp_shared->mp_sem_name = nullptr;
+        free(lp_shared->mp_mem_name);
+        lp_shared->mp_mem_name = nullptr;
+        lb_result              = false;
         goto l_lblExit;
     }
 
-    l_bRelease = true;
+    lb_release = true;
 
     ////////////////////////////////////////////////////////////////////////////
     // share memory
-    create_name(l_pShared->pMemName, l_pShared->szName, e_type_file, i_pName);
+    create_name(lp_shared->mp_mem_name, lp_shared->mz_name, e_type_file, ip_name);
 
-    l_pShared->iMFD = shm_open(l_pShared->pMemName, O_RDWR | O_CREAT | O_EXCL, 0666);
-    if(0 > l_pShared->iMFD)
+    lp_shared->mi_mfd = shm_open(lp_shared->mp_mem_name, O_RDWR | O_CREAT | O_EXCL, 0666);
+    if(0 > lp_shared->mi_mfd)
     {
-        free(l_pShared->pMemName);
-        l_pShared->pMemName = nullptr;
-        l_bResult           = false;
+        free(lp_shared->mp_mem_name);
+        lp_shared->mp_mem_name = nullptr;
+        lb_result              = false;
         goto l_lblExit;
     }
 
-    if(0 != ftruncate(l_pShared->iMFD, (off_t)i_wSize))
+    if(0 != ftruncate(lp_shared->mi_mfd, (off_t)iu_size))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = mmap(0, (size_t)i_wSize, PROT_READ | PROT_WRITE, MAP_SHARED, l_pShared->iMFD, 0);
+    lp_buffer = mmap(0, (size_t)iu_size, PROT_READ | PROT_WRITE, MAP_SHARED, lp_shared->mi_mfd, 0);
 
-    if((nullptr == l_pBuffer) || (MAP_FAILED == l_pBuffer))
+    if((nullptr == lp_buffer) || (MAP_FAILED == lp_buffer))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    *o_pHandle = l_pShared;
+    *op_handle = lp_shared;
 
-    memcpy(l_pBuffer, i_pData, (size_t)i_wSize);
+    memcpy(lp_buffer, ip_data, (size_t)iu_size);
 
-    if(0 != munmap(l_pBuffer, (size_t)i_wSize))
+    if(0 != munmap(lp_buffer, (size_t)iu_size))
     {
     }
 
 l_lblExit:
-    if(l_bRelease)
+    if(lb_release)
     {
-        sem_post(l_pShared->hSemaphore);
+        sem_post(lp_shared->mh_semaphore);
     }
 
-    if(!l_bResult)
+    if(!lb_result)
     {
-        close(l_pShared);
-        l_pShared = nullptr;
+        close(lp_shared);
+        lp_shared = nullptr;
 
-        if(o_pHandle)
+        if(op_handle)
         {
-            *o_pHandle = nullptr;
+            *op_handle = nullptr;
         }
     }
 
-    return l_bResult;
+    return lb_result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::read
-bool c_shared::read(const tXCHAR *i_pName, void *o_pData, uint16_t i_wSize)
+bool c_shared::read(const tXCHAR *ip_name, void *op_data, uint16_t iu_size)
 {
-    bool        l_bResult = true;
-    size_t      l_szName  = 0;
-    char       *l_pName   = nullptr;
-    void       *l_pBuffer = nullptr;
-    int         l_iMFD    = -1;
-    struct stat l_sStat;
+    bool        lb_result = true;
+    size_t      lz_name   = 0;
+    char       *lp_name   = nullptr;
+    void       *lp_buffer = nullptr;
+    int         li_mfd    = -1;
+    struct stat ls_stat;
 
-    if((nullptr == i_pName) || (nullptr == o_pData) || (0 >= i_wSize))
+    if((nullptr == ip_name) || (nullptr == op_data) || (0 >= iu_size))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_szName = shared_name_len(i_pName);
-    l_pName  = (char *)malloc(l_szName);
+    lz_name = shared_name_len(ip_name);
+    lp_name = (char *)malloc(lz_name);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open shared memory object
-    create_name(l_pName, l_szName, e_type_file, i_pName);
+    create_name(lp_name, lz_name, e_type_file, ip_name);
 
-    l_iMFD = shm_open(l_pName, O_RDONLY, 0444);
+    li_mfd = shm_open(lp_name, O_RDONLY, 0444);
 
-    if(0 > l_iMFD)
+    if(0 > li_mfd)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    memset(&l_sStat, 0, sizeof(l_sStat));
-    if(-1 == fstat(l_iMFD, &l_sStat))
+    memset(&ls_stat, 0, sizeof(ls_stat));
+    if(-1 == fstat(li_mfd, &ls_stat))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    if((size_t)l_sStat.st_size < (size_t)i_wSize)
+    if((size_t)ls_stat.st_size < (size_t)iu_size)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = mmap(0, (size_t)l_sStat.st_size, PROT_READ, MAP_SHARED, l_iMFD, 0);
+    lp_buffer = mmap(0, (size_t)ls_stat.st_size, PROT_READ, MAP_SHARED, li_mfd, 0);
 
-    if((nullptr == l_pBuffer) || (MAP_FAILED == l_pBuffer))
+    if((nullptr == lp_buffer) || (MAP_FAILED == lp_buffer))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    memcpy(o_pData, l_pBuffer, (size_t)i_wSize);
+    memcpy(op_data, lp_buffer, (size_t)iu_size);
 
-    if(0 == munmap(l_pBuffer, (size_t)l_sStat.st_size))
+    if(0 == munmap(lp_buffer, (size_t)ls_stat.st_size))
     {
-        l_pBuffer = nullptr;
+        lp_buffer = nullptr;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(0 <= l_iMFD)
+    if(0 <= li_mfd)
     {
-        ::close(l_iMFD);
-        l_iMFD = -1;
+        ::close(li_mfd);
+        li_mfd = -1;
     }
 
-    return l_bResult;
+    return lb_result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::write
-bool c_shared::write(const tXCHAR *i_pName, const uint8_t *i_pData, uint16_t i_wSize)
+bool c_shared::write(const tXCHAR *ip_name, const uint8_t *ip_data, uint16_t iu_size)
 {
-    bool        l_bResult = true;
-    size_t      l_szName  = 0;
-    char       *l_pName   = nullptr;
-    void       *l_pBuffer = nullptr;
-    int         l_iMFD    = -1;
-    struct stat l_sStat;
+    bool        lb_result = true;
+    size_t      lz_name   = 0;
+    char       *lp_name   = nullptr;
+    void       *lp_buffer = nullptr;
+    int         li_mfd    = -1;
+    struct stat ls_stat;
 
-    if((nullptr == i_pName) || (nullptr == i_pData) || (0 >= i_wSize))
+    if((nullptr == ip_name) || (nullptr == ip_data) || (0 >= iu_size))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_szName = shared_name_len(i_pName);
-    l_pName  = (char *)malloc(l_szName);
+    lz_name = shared_name_len(ip_name);
+    lp_name = (char *)malloc(lz_name);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open shared memory object
-    create_name(l_pName, l_szName, e_type_file, i_pName);
+    create_name(lp_name, lz_name, e_type_file, ip_name);
 
-    l_iMFD = shm_open(l_pName, O_RDWR, 0666);
+    li_mfd = shm_open(lp_name, O_RDWR, 0666);
 
-    if(0 > l_iMFD)
+    if(0 > li_mfd)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    memset(&l_sStat, 0, sizeof(l_sStat));
-    if(-1 == fstat(l_iMFD, &l_sStat))
+    memset(&ls_stat, 0, sizeof(ls_stat));
+    if(-1 == fstat(li_mfd, &ls_stat))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    if((size_t)l_sStat.st_size < (size_t)i_wSize)
+    if((size_t)ls_stat.st_size < (size_t)iu_size)
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    l_pBuffer = mmap(0, (size_t)l_sStat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, l_iMFD, 0);
+    lp_buffer = mmap(0, (size_t)ls_stat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, li_mfd, 0);
 
-    if((nullptr == l_pBuffer) || (MAP_FAILED == l_pBuffer))
+    if((nullptr == lp_buffer) || (MAP_FAILED == lp_buffer))
     {
-        l_bResult = false;
+        lb_result = false;
         goto l_lblExit;
     }
 
-    memcpy(l_pBuffer, i_pData, (size_t)i_wSize);
+    memcpy(lp_buffer, ip_data, (size_t)iu_size);
 
-    if(0 == munmap(l_pBuffer, (size_t)l_sStat.st_size))
+    if(0 == munmap(lp_buffer, (size_t)ls_stat.st_size))
     {
-        l_pBuffer = nullptr;
+        lp_buffer = nullptr;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(0 <= l_iMFD)
+    if(0 <= li_mfd)
     {
-        ::close(l_iMFD);
-        l_iMFD = -1;
+        ::close(li_mfd);
+        li_mfd = -1;
     }
 
-    return l_bResult;
+    return lb_result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::lock
-c_shared::e_lock c_shared::lock(const tXCHAR *i_pName, h_sem &o_rSem, uint32_t i_dwTimeout_ms)
+c_shared::e_lock c_shared::lock(const tXCHAR *ip_name, h_sem &or_sem, uint32_t iu_timeout_ms)
 {
-    e_lock    l_eReturn = c_shared::e_timeout;
-    size_t    l_szName  = 0;
-    char     *l_pName   = nullptr;
-    const int l_i1ms    = 1000;
-    int64_t   l_llWait  = (int64_t)i_dwTimeout_ms * 1000LL;
-    sem_t    *l_hSem    = SEM_FAILED;
+    e_lock    le_return = c_shared::e_timeout;
+    size_t    lz_name   = 0;
+    char     *lp_name   = nullptr;
+    const int li_1ms    = 1000;
+    int64_t   li_wait   = (int64_t)iu_timeout_ms * 1000LL;
+    sem_t    *lh_sem    = SEM_FAILED;
 
-    o_rSem              = nullptr;
+    or_sem              = nullptr;
 
-    if(nullptr == i_pName)
+    if(nullptr == ip_name)
     {
-        l_eReturn = c_shared::e_error;
+        le_return = c_shared::e_error;
         goto l_lblExit;
     }
 
-    l_szName = shared_name_len(i_pName);
-    l_pName  = (char *)malloc(l_szName);
+    lz_name = shared_name_len(ip_name);
+    lp_name = (char *)malloc(lz_name);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_eReturn = c_shared::e_error;
+        le_return = c_shared::e_error;
         goto l_lblExit;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // open semaphore
-    create_name(l_pName, l_szName, e_type_mutex, i_pName);
+    create_name(lp_name, lz_name, e_type_mutex, ip_name);
 
-    l_hSem = sem_open(l_pName, 0);
-    if(SEM_FAILED == l_hSem)
+    lh_sem = sem_open(lp_name, 0);
+    if(SEM_FAILED == lh_sem)
     {
-        l_eReturn = c_shared::e_not_exists;
+        le_return = c_shared::e_not_exists;
         goto l_lblExit;
     }
 
-    l_eReturn = c_shared::e_timeout;
+    le_return = c_shared::e_timeout;
 
-    while(0 < l_llWait)
+    while(0 < li_wait)
     {
-        if(0 == sem_trywait(l_hSem))
+        if(0 == sem_trywait(lh_sem))
         {
-            l_eReturn = c_shared::e_ok;
+            le_return = c_shared::e_ok;
             break;
         }
         else
         {
-            usleep(l_i1ms); // 1 ms
-            l_llWait -= l_i1ms;
+            usleep(li_1ms); // 1 ms
+            li_wait -= li_1ms;
         }
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
 
-    if(SEM_FAILED != l_hSem)
+    if(SEM_FAILED != lh_sem)
     {
-        if(c_shared::e_ok == l_eReturn)
+        if(c_shared::e_ok == le_return)
         {
-            o_rSem = (h_sem)l_hSem;
+            or_sem = (h_sem)lh_sem;
         }
         else
         {
-            sem_close(l_hSem);
-            l_hSem = SEM_FAILED;
+            sem_close(lh_sem);
+            lh_sem = SEM_FAILED;
         }
     }
 
-    return l_eReturn;
+    return le_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::unlock
-c_shared::e_lock c_shared::unlock(h_sem &io_rSem)
+c_shared::e_lock c_shared::unlock(h_sem &ior_sem)
 {
-    e_lock l_eReturn = c_shared::e_error;
-    sem_t *l_hSem    = (sem_t *)io_rSem;
+    e_lock le_return = c_shared::e_error;
+    sem_t *lh_sem    = (sem_t *)ior_sem;
 
-    if(nullptr == io_rSem)
+    if(nullptr == ior_sem)
     {
-        l_eReturn = c_shared::e_not_exists;
+        le_return = c_shared::e_not_exists;
         goto l_lblExit;
     }
 
-    if(0 == sem_post(l_hSem))
+    if(0 == sem_post(lh_sem))
     {
-        l_eReturn = c_shared::e_ok;
+        le_return = c_shared::e_ok;
     }
 
-    sem_close(l_hSem);
-    io_rSem = nullptr;
+    sem_close(lh_sem);
+    ior_sem = nullptr;
 
 l_lblExit:
-    return l_eReturn;
+    return le_return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::get_name
-const tXCHAR *c_shared::get_name(h_shared i_pShared)
+const tXCHAR *c_shared::get_name(h_shared ih_shared)
 {
-    if(nullptr == i_pShared)
+    if(nullptr == ih_shared)
     {
         return nullptr;
     }
 
-    return i_pShared->pName;
+    return ih_shared->mp_name;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::close
-bool c_shared::close(h_shared i_pShared)
+bool c_shared::close(h_shared ih_shared)
 {
-    if(nullptr == i_pShared)
+    if(nullptr == ih_shared)
     {
         return false;
     }
 
-    if(0 <= i_pShared->iMFD)
+    if(0 <= ih_shared->mi_mfd)
     {
-        ::close(i_pShared->iMFD);
-        i_pShared->iMFD = -1;
+        ::close(ih_shared->mi_mfd);
+        ih_shared->mi_mfd = -1;
     }
 
-    if(i_pShared->pMemName)
+    if(ih_shared->mp_mem_name)
     {
-        shm_unlink(i_pShared->pMemName);
+        shm_unlink(ih_shared->mp_mem_name);
     }
 
-    if(SEM_FAILED != i_pShared->hSemaphore)
+    if(SEM_FAILED != ih_shared->mh_semaphore)
     {
-        int l_iRes            = -1;
-        l_iRes                = sem_close(i_pShared->hSemaphore);
-        i_pShared->hSemaphore = SEM_FAILED;
-        UNUSED_ARG(l_iRes);
+        int li_res              = -1;
+        li_res                  = sem_close(ih_shared->mh_semaphore);
+        ih_shared->mh_semaphore = SEM_FAILED;
+        UNUSED_ARG(li_res);
     }
 
-    if(i_pShared->pSemName)
+    if(ih_shared->mp_sem_name)
     {
-        sem_unlink(i_pShared->pSemName);
-        free(i_pShared->pSemName);
-        i_pShared->pSemName = nullptr;
+        sem_unlink(ih_shared->mp_sem_name);
+        free(ih_shared->mp_sem_name);
+        ih_shared->mp_sem_name = nullptr;
     }
 
-    if(i_pShared->pMemName)
+    if(ih_shared->mp_mem_name)
     {
-        free(i_pShared->pMemName);
-        i_pShared->pMemName = nullptr;
+        free(ih_shared->mp_mem_name);
+        ih_shared->mp_mem_name = nullptr;
     }
 
-    if(i_pShared->pName)
+    if(ih_shared->mp_name)
     {
-        free(i_pShared->pName);
-        i_pShared->pName = nullptr;
+        free(ih_shared->mp_name);
+        ih_shared->mp_name = nullptr;
     }
 
-    i_pShared->szName = 0;
+    ih_shared->mz_name = 0;
 
-    free(i_pShared);
-    i_pShared = nullptr;
+    free(ih_shared);
+    ih_shared = nullptr;
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // c_shared::unlink
-bool c_shared::unlink(const tXCHAR *i_pName)
+bool c_shared::unlink(const tXCHAR *ip_name)
 {
-    bool   l_bReturn = true;
-    size_t l_szName  = 0;
-    char  *l_pName   = nullptr;
+    bool   lb_return = true;
+    size_t lz_name   = 0;
+    char  *lp_name   = nullptr;
 
-    if(nullptr == i_pName)
+    if(nullptr == ip_name)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    l_szName = shared_name_len(i_pName);
-    l_pName  = (char *)malloc(l_szName);
+    lz_name = shared_name_len(ip_name);
+    lp_name = (char *)malloc(lz_name);
 
-    if(nullptr == l_pName)
+    if(nullptr == lp_name)
     {
-        l_bReturn = false;
+        lb_return = false;
         goto l_lblExit;
     }
 
-    create_name(l_pName, l_szName, e_type_mutex, i_pName);
-    if(0 != sem_unlink(l_pName))
+    create_name(lp_name, lz_name, e_type_mutex, ip_name);
+    if(0 != sem_unlink(lp_name))
     {
-        l_bReturn = false;
+        lb_return = false;
     }
 
-    create_name(l_pName, l_szName, e_type_file, i_pName);
-    if(0 != shm_unlink(l_pName))
+    create_name(lp_name, lz_name, e_type_file, ip_name);
+    if(0 != shm_unlink(lp_name))
     {
-        l_bReturn = false;
+        lb_return = false;
     }
 
 l_lblExit:
-    if(l_pName)
+    if(lp_name)
     {
-        free(l_pName);
-        l_pName = nullptr;
+        free(lp_name);
+        lp_name = nullptr;
     }
-    return l_bReturn;
+    return lb_return;
 }
