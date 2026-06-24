@@ -59,3 +59,7 @@ CMakeUserPresets.json
 .DS_Store
 
 scripts/__pycache__/**
+
+# Generated compile database (symlink to build dir)
+compile_commands.json
+.cache/
