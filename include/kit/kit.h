@@ -6,6 +6,7 @@
 #include "kit/types.h"
 #include "kit/list.hpp"
 #include "kit/spin_lock.hpp"
+#include "kit/mpsc_queue.hpp"
 #include "kit/shared_mem.hpp"
 #include "kit/event.hpp"
 #include "kit/thread.hpp"

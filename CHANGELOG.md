@@ -5,12 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
 ## [0.2.0] - 2026-06-24
 
 ### Added
 - `thread.hpp` - cross-platform thread priority API (`kit::get_thread_priority` / `kit::set_thread_priority`) with abstract `e_thread_priority` levels; platform implementations (Linux, macOS, Windows)
 - `thread.hpp` exposed via the `kit/kit.h` aggregator header
 - Test suite for thread priority (`tests/thread_test.hpp`)
+- `mpsc_queue.hpp` - bounded, lock-free multi-producer / single-consumer queue (`kit::c_mpsc_queue`) based on the Vyukov bounded ring buffer with per-slot sequence numbers; exposed via the `kit/kit.h` aggregator header
+- Test suite for the MPSC queue (`tests/mpsc_queue_test.hpp`)
 
 ### Changed
 - `shared` module internals renamed to follow `doc/code_style.md` conventions; public function signatures unchanged
