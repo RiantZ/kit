@@ -10,6 +10,7 @@
 #include "kit/shared_mem.hpp"
 #include "kit/event.hpp"
 #include "kit/thread.hpp"
+#include "kit/file.hpp"
 
 #ifdef __cplusplus
 extern "C"

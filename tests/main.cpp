@@ -8,6 +8,7 @@
 #include "shared_test.hpp"
 #include "event_test.hpp"
 #include "thread_test.hpp"
+#include "file_test.hpp"
 
 TEST(VersionTest, ReturnsNonEmpty)
 {
