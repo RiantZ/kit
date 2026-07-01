@@ -402,11 +402,25 @@ public:
         return t_iterator(mp_first);
     }
 
+    /// @brief Returns a constant iterator to the beginning of the list
+    /// @return Constant iterator pointing to the first element
+    t_const_iterator begin() const noexcept
+    {
+        return t_const_iterator(mp_first);
+    }
+
     /// @brief Returns an iterator to the end of the list (past the last element)
     /// @return Iterator pointing to the end sentinel
     t_iterator end() noexcept
     {
         return t_iterator(&mo_null_item);
+    }
+
+    /// @brief Returns a constant iterator to the end of the list (past the last element)
+    /// @return Constant iterator pointing to the end sentinel
+    t_const_iterator end() const noexcept
+    {
+        return t_const_iterator(const_cast<s_item *>(&mo_null_item));
     }
 
     /// @brief Removes and returns the first element from the list
@@ -645,7 +659,7 @@ public:
 
     /// @brief Returns the number of elements in the list
     /// @return The size of the list
-    inline size_t size()
+    inline size_t size() const
     {
         return mz_count;
     }
