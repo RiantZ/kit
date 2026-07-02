@@ -12,6 +12,11 @@ endif()
 
 add_library(kit_obj OBJECT ${KIT_SOURCES})
 
+# The same objects feed both kit_static and kit_shared. Building them with
+# position-independent code lets shared-library linkage handle PC-relative
+# relocations against exported symbols (e.g. c_file's vtable) on Linux/ELF.
+set_target_properties(kit_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(kit_obj
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
