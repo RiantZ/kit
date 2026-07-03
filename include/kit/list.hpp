@@ -195,6 +195,14 @@ public:
     }
 };
 
+/// @brief Controls whether c_lst::clear() releases surplus pool segments
+/// after removing all elements, or leaves the pool allocated for reuse.
+enum class e_c_lst_pool_policy
+{
+    e_trim = 0, ///< release every pool segment except the head one (default)
+    e_keep      ///< leave all allocated pool segments in place
+};
+
 /// @brief A doubly-linked list container with custom memory pooling for efficient allocation
 /// @tparam t_lst_value_type The type of elements stored in the list
 template <typename t_lst_value_type> class c_lst
@@ -607,7 +615,9 @@ public:
 
     /// @brief Removes all elements from the list and applies a cleanup function to each
     /// @param if_callback Lambda function to handle resource cleanup for each element's data
-    template <class t_fn> inline void clear(t_fn il_callback)
+    /// @param ie_pool_policy Whether to release surplus pool segments afterwards (default: trim)
+    template <class t_fn>
+    inline void clear(t_fn il_callback, e_c_lst_pool_policy ie_pool_policy = e_c_lst_pool_policy::e_trim)
     {
         while(&mo_null_item != mp_first)
         {
@@ -617,23 +627,19 @@ public:
             free_item(lp_cell);
         }
 
-        mp_first                  = &mo_null_item;
-        mp_last                   = &mo_null_item;
-        mz_count                  = 0;
+        mp_first = &mo_null_item;
+        mp_last  = &mo_null_item;
+        mz_count = 0;
 
-        // remove all segments, expect last one
-        s_pool_block *lp_pool_tmp = nullptr;
-        while((mp_pool_head) && (mp_pool_head->mp_next))
+        if(e_c_lst_pool_policy::e_trim == ie_pool_policy)
         {
-            lp_pool_tmp  = mp_pool_head;
-            mp_pool_head = mp_pool_head->mp_next;
-
-            free_pool_block(lp_pool_tmp);
+            trim_pool_to_head_block();
         }
     }
 
     /// @brief Removes all elements from the list
-    inline void clear()
+    /// @param ie_pool_policy Whether to release surplus pool segments afterwards (default: trim)
+    inline void clear(e_c_lst_pool_policy ie_pool_policy = e_c_lst_pool_policy::e_trim)
     {
         while(&mo_null_item != mp_first)
         {
@@ -642,18 +648,13 @@ public:
             free_item(lp_cell);
         }
 
-        mp_first                  = &mo_null_item;
-        mp_last                   = &mo_null_item;
-        mz_count                  = 0;
+        mp_first = &mo_null_item;
+        mp_last  = &mo_null_item;
+        mz_count = 0;
 
-        // remove all segments, expect last one
-        s_pool_block *lp_pool_tmp = nullptr;
-        while((mp_pool_head) && (mp_pool_head->mp_next))
+        if(e_c_lst_pool_policy::e_trim == ie_pool_policy)
         {
-            lp_pool_tmp  = mp_pool_head;
-            mp_pool_head = mp_pool_head->mp_next;
-
-            free_pool_block(lp_pool_tmp);
+            trim_pool_to_head_block();
         }
     }
 
@@ -864,6 +865,44 @@ private:
         ip_cell->mp_prev   = nullptr;
         ip_cell->mp_next   = mp_pool_item_first;
         mp_pool_item_first = ip_cell;
+    }
+
+    /// @brief Releases every pool segment except the head one, then rebuilds
+    /// the surviving segment's free-cell chain from scratch.
+    /// @note Must only be called once every live item has already been
+    /// returned via free_item() (i.e. the list itself is logically empty).
+    /// The free list built by those free_item() calls can thread through
+    /// cells living in the segments released here, so it must not be reused
+    /// as-is — doing so previously left mp_pool_item_first dangling into
+    /// freed memory once a list had grown past its first pool segment.
+    void trim_pool_to_head_block()
+    {
+        s_pool_block *lp_pool_tmp = nullptr;
+        while((mp_pool_head) && (mp_pool_head->mp_next))
+        {
+            lp_pool_tmp  = mp_pool_head;
+            mp_pool_head = mp_pool_head->mp_next;
+
+            free_pool_block(lp_pool_tmp);
+        }
+
+        if(mp_pool_head)
+        {
+            s_item *lp_cell = mp_pool_head->mp_cells;
+
+            for(uint32_t lu_idx = 1; lu_idx < mp_pool_head->mz_count; lu_idx++)
+            {
+                lp_cell->mp_next = (lp_cell + 1);
+                lp_cell++;
+            }
+            lp_cell->mp_next   = nullptr;
+
+            mp_pool_item_first = mp_pool_head->mp_cells;
+        }
+        else
+        {
+            mp_pool_item_first = nullptr;
+        }
     }
 };
 }

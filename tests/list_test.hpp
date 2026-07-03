@@ -680,6 +680,108 @@ TEST_F(c_lst_test, PoolGrowth)
     EXPECT_EQ(mc_lst.front(), 999);
 }
 
+// Regression test: clear() used to free every pool segment except the head
+// one while leaving mp_pool_item_first threaded through cells living in the
+// segments just released, once the list had grown past its first pool
+// segment. The next allocate_item() call (from push_last()) could then hand
+// out a dangling cell, corrupting later inserts. Repeat several grow/clear
+// cycles and verify values (not just counts) survive each round.
+TEST_F(c_lst_test, PoolGrowthSurvivesRepeatedClearCycles)
+{
+    const int li_per_cycle = 200; // well past the default 64-item pool segment
+
+    for(int li_cycle = 0; li_cycle < 20; ++li_cycle)
+    {
+        for(int i = 0; i < li_per_cycle; ++i)
+        {
+            mc_lst.push_last(li_cycle * 10000 + i);
+        }
+
+        ASSERT_EQ(mc_lst.size(), static_cast<size_t>(li_per_cycle));
+
+        int li_expected = 0;
+        for(auto v : mc_lst)
+        {
+            ASSERT_EQ(v, li_cycle * 10000 + li_expected);
+            ++li_expected;
+        }
+        ASSERT_EQ(li_expected, li_per_cycle);
+
+        mc_lst.clear();
+        ASSERT_EQ(mc_lst.size(), 0);
+        ASSERT_TRUE(mc_lst.begin() == mc_lst.end());
+    }
+}
+
+// clear() defaults to e_c_lst_pool_policy::e_trim, so passing it explicitly must
+// behave exactly like the argument-less call above.
+TEST_F(c_lst_test, ClearWithExplicitTrimPolicyMatchesDefault)
+{
+    for(int i = 0; i < 200; ++i)
+    {
+        mc_lst.push_last(i);
+    }
+
+    mc_lst.clear(kit::e_c_lst_pool_policy::e_trim);
+    EXPECT_EQ(mc_lst.size(), 0);
+    EXPECT_TRUE(mc_lst.begin() == mc_lst.end());
+
+    mc_lst.push_last(999);
+    EXPECT_EQ(mc_lst.size(), 1);
+    EXPECT_EQ(mc_lst.front(), 999);
+}
+
+// clear(e_keep) must remain functionally equivalent to clear() from the
+// caller's point of view (same emptying semantics) even though it leaves the
+// pool's surplus segments allocated instead of releasing them.
+TEST_F(c_lst_test, ClearWithKeepPolicySurvivesRepeatedCycles)
+{
+    const int li_per_cycle = 200; // well past the default 64-item pool segment
+
+    for(int li_cycle = 0; li_cycle < 20; ++li_cycle)
+    {
+        for(int i = 0; i < li_per_cycle; ++i)
+        {
+            mc_lst.push_last(li_cycle * 10000 + i);
+        }
+
+        ASSERT_EQ(mc_lst.size(), static_cast<size_t>(li_per_cycle));
+
+        int li_expected = 0;
+        for(auto v : mc_lst)
+        {
+            ASSERT_EQ(v, li_cycle * 10000 + li_expected);
+            ++li_expected;
+        }
+        ASSERT_EQ(li_expected, li_per_cycle);
+
+        mc_lst.clear(kit::e_c_lst_pool_policy::e_keep);
+        ASSERT_EQ(mc_lst.size(), 0);
+        ASSERT_TRUE(mc_lst.begin() == mc_lst.end());
+    }
+}
+
+// The callback overload must accept the same policy parameter and still
+// invoke the cleanup callback for every removed element.
+TEST_F(c_lst_test, ClearWithCallbackAndKeepPolicy)
+{
+    for(int i = 0; i < 200; ++i)
+    {
+        mc_lst.push_last(i);
+    }
+
+    int li_cleanup_count = 0;
+    mc_lst.clear([&li_cleanup_count](int) { ++li_cleanup_count; }, kit::e_c_lst_pool_policy::e_keep);
+
+    EXPECT_EQ(li_cleanup_count, 200);
+    EXPECT_EQ(mc_lst.size(), 0);
+    EXPECT_TRUE(mc_lst.begin() == mc_lst.end());
+
+    mc_lst.push_last(999);
+    EXPECT_EQ(mc_lst.size(), 1);
+    EXPECT_EQ(mc_lst.front(), 999);
+}
+
 // --- remove(it, callback) with end() iterator ---
 
 TEST_F(c_lst_test, RemoveWithCleanupEndIterator)
