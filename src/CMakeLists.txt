@@ -38,22 +38,44 @@ configure_file(
 add_library(kit_static STATIC $<TARGET_OBJECTS:kit_obj>)
 target_link_libraries(kit_static PUBLIC kit_obj)
 target_compile_definitions(kit_static PUBLIC KIT_STATIC)
-set_target_properties(kit_static PROPERTIES OUTPUT_NAME kit)
 
-# Shared library
-add_library(kit_shared SHARED $<TARGET_OBJECTS:kit_obj>)
-target_link_libraries(kit_shared PUBLIC kit_obj)
+# On Windows a SHARED library also emits an import library with the .lib
+# extension. With both kit_static and kit_shared named "kit" the shared import
+# library would overwrite the static archive in the same output directory, and
+# since kit exports nothing (consumers use KIT_STATIC linkage) that import lib
+# resolves no symbols -- breaking every consumer that links kit::kit. Give the
+# static archive a distinct name on Windows to avoid the collision; consumers
+# link via the kit::kit target so the file name is transparent to them.
+if(WIN32)
+    set_target_properties(kit_static PROPERTIES OUTPUT_NAME kit_static)
+else()
+    set_target_properties(kit_static PROPERTIES OUTPUT_NAME kit)
+endif()
 
 if(KIT_PLATFORM_LINUX)
-    target_link_libraries(kit_shared PRIVATE rt pthread)
     target_link_libraries(kit_static PRIVATE rt pthread)
 endif()
 
-set_target_properties(kit_shared PROPERTIES
-    OUTPUT_NAME kit
-    VERSION     ${PROJECT_VERSION}
-    SOVERSION   ${PROJECT_VERSION_MAJOR}
-)
+# Shared library (optional). Consumers that only ever link kit::kit (the static
+# archive) can set KIT_BUILD_SHARED=OFF to skip building the DLL/.so entirely,
+# saving build time. Defaults ON to preserve behaviour for standalone builds and
+# consumers that do need the shared library.
+option(KIT_BUILD_SHARED "Build the kit shared library" ON)
+
+if(KIT_BUILD_SHARED)
+    add_library(kit_shared SHARED $<TARGET_OBJECTS:kit_obj>)
+    target_link_libraries(kit_shared PUBLIC kit_obj)
+
+    if(KIT_PLATFORM_LINUX)
+        target_link_libraries(kit_shared PRIVATE rt pthread)
+    endif()
+
+    set_target_properties(kit_shared PROPERTIES
+        OUTPUT_NAME kit
+        VERSION     ${PROJECT_VERSION}
+        SOVERSION   ${PROJECT_VERSION_MAJOR}
+    )
+endif()
 
 # Namespace alias (consumers use kit::kit)
 add_library(kit::kit ALIAS kit_static)
