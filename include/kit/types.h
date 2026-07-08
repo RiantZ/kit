@@ -34,3 +34,15 @@ inline int str_casecmp(const char *ip_a, const char *ip_b)
     return strcasecmp(ip_a, ip_b);
 }
 #endif
+
+// duplicate a narrow (ASCII) C-string. strdup is POSIX; MSVC deprecates that
+// spelling and provides the same routine as _strdup. Release the result with
+// free().
+inline char *str_dup(const char *ip_str)
+{
+#ifdef G_OS_WINDOWS
+    return _strdup(ip_str);
+#else
+    return strdup(ip_str);
+#endif
+}
