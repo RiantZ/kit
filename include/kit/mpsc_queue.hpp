@@ -9,6 +9,12 @@
 // Bounded lock-free MPSC queue based on the Vyukov bounded ring buffer.
 namespace kit
 {
+#if defined(_MSC_VER)
+    // C4324: the alignas below intentionally pads the structure to avoid false
+    // sharing between the producer and consumer positions.
+    #pragma warning(push)
+    #pragma warning(disable : 4324)
+#endif
 /// @brief Bounded, lock-free multi-producer / single-consumer queue.
 ///
 /// The queue is implemented as a fixed-capacity ring buffer where every slot
@@ -208,4 +214,8 @@ public:
         return 0 == size();
     }
 };
+
+#if defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
 }
