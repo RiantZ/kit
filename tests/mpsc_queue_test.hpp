@@ -230,6 +230,8 @@ inline s_perf_result run_lockfree_mpsc(uint32_t iu_producers, uint32_t iu_per_pr
 /// @brief Runs the same scenario using a classic mutex-protected list (kit::c_lst).
 inline s_perf_result run_locked_list_mpsc(uint32_t iu_producers, uint32_t iu_per_producer, size_t iz_capacity)
 {
+    (void)iz_capacity; // capacity gating is disabled below; keep the signature symmetric
+
     kit::c_lst<uint64_t> lc_list(16384);
     std::mutex           lc_mutex;
 

@@ -50,3 +50,30 @@ jobs:
 
       - name: Test
         run: ctest --test-dir ${{ matrix.build_dir }} ${{ matrix.test_config_flag }} --output-on-failure
+
+  format:
+    name: clang-format check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # clang-format output drifts between major versions. Pin to 22 to match
+      # the version developers use locally (Homebrew clang-format); the runner's
+      # default is v18, which reports spurious violations.
+      - name: Install clang-format 22
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get install -y clang-format-22
+          # /usr/local/bin precedes /usr/bin in PATH, so this wins over the
+          # runner's default clang-format.
+          sudo ln -sf /usr/bin/clang-format-22 /usr/local/bin/clang-format
+          clang-format --version
+
+      - name: Check formatting
+        run: python scripts/code_format.py --check --all

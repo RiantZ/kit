@@ -797,7 +797,11 @@ private:
             {
                 s_item *lp_cell = nullptr;
 
-                memset(lp_pool->mp_cells, 0, sizeof(s_item) * lp_pool->mz_count);
+                // Cast to void* so the byte-wise zeroing of this raw pool
+                // storage is not flagged by -Wclass-memaccess when
+                // t_lst_value_type is a non-trivial type. The cells are raw
+                // memory here; each mp_data is assigned into on insertion.
+                memset((void *)lp_pool->mp_cells, 0, sizeof(s_item) * lp_pool->mz_count);
 
                 lp_cell = lp_pool->mp_cells;
 

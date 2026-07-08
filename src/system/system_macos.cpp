@@ -1,7 +1,7 @@
 #include "kit/system.hpp"
 
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <unistd.h>
 
 namespace kit
@@ -24,13 +24,11 @@ bool get_process_name(char *op_buf, size_t iz_buf)
     const char *lp_name = getprogname();
     if(lp_name)
     {
-        std::strncpy(op_buf, lp_name, iz_buf - 1);
-        op_buf[iz_buf - 1] = '\0';
+        std::snprintf(op_buf, iz_buf, "%s", lp_name);
         return true;
     }
 
-    std::strncpy(op_buf, "unknown", iz_buf - 1);
-    op_buf[iz_buf - 1] = '\0';
+    std::snprintf(op_buf, iz_buf, "%s", "unknown");
     return false;
 }
 
@@ -48,8 +46,7 @@ bool get_host_name(char *op_buf, size_t iz_buf)
         return true;
     }
 
-    std::strncpy(op_buf, "unknown", iz_buf - 1);
-    op_buf[iz_buf - 1] = '\0';
+    std::snprintf(op_buf, iz_buf, "%s", "unknown");
     return false;
 }
 
