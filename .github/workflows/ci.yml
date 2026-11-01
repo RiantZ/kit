@@ -18,7 +18,7 @@ jobs:
             build_dir: _Build_lnx
             build_config_flag: ""
             test_config_flag: ""
-          - os: macos-14
+          - os: macos-26
             name: macOS (AppleClang)
             preset: macos
             build_dir: _Build_mac
