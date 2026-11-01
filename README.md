@@ -9,7 +9,7 @@ GitHub Actions runs on every push and pull request against `main`:
 | Platform | Compiler | Runner |
 |----------|----------|--------|
 | Linux    | GCC 13   | `ubuntu-24.04` |
-| macOS    | AppleClang | `macos-14` |
+| macOS    | AppleClang | `macos-26` |
 | Windows  | MSVC 2022 | `windows-2022` |
 
 Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
