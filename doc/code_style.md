@@ -98,6 +98,13 @@ Examples:
 #define MY_DEFINE       0
 ```
 
+## Comments
+ * short and plain: one line by default, two at most
+ * explain *why* the code is there, not how it works step by step
+ * longer reasoning belongs to the commit message or `doc/`, not to the code
+
+A comment is read by a person who has no time for long or tangled text (*Objective #1*).
+
 # Examples
 ```cpp
 #include "my_header_file.h"
