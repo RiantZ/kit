@@ -106,10 +106,9 @@ public:
 
         if(0 == --mu_recursion)
         {
+            mc_thread_id = std::thread::id();
             mc_flag.store(false, std::memory_order_release);
         }
-
-        mc_thread_id = std::thread::id();
     }
 };
 }
