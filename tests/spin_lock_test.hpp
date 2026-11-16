@@ -5,6 +5,7 @@
 
 #include <semaphore>
 #include <chrono>
+#include <latch>
 #include <thread>
 #include <mutex>
 #include <vector>
@@ -175,4 +176,108 @@ TEST(SpinLockTests, Concurency)
     };
 
     EXPECT_EQ(li_test3, lu_iterations * lu_cores_count);
+}
+
+// Contention tests below make waiters read the owner ID, so ThreadSanitizer catches races on it
+TEST(SpinLockTests, RecursiveConcurrency)
+{
+    constexpr uint32_t lu_iterations = 10'000;
+
+    uint32_t         lu_counter      = 0;
+    kit::c_spin_lock lc_lock;
+
+    uint32_t lu_threads_count = std::thread::hardware_concurrency();
+    if(lu_threads_count < 2)
+    {
+        lu_threads_count = 2;
+    }
+
+    std::latch               lc_start(lu_threads_count);
+    std::vector<std::thread> lc_threads;
+    for(uint32_t lu_t = 0; lu_t < lu_threads_count; lu_t++)
+    {
+        lc_threads.push_back(std::thread(
+            [&]
+            {
+                // Start together so the threads really contend
+                lc_start.arrive_and_wait();
+                for(uint32_t lu_i = 0; lu_i < lu_iterations; lu_i++)
+                {
+                    lc_lock.lock();
+                    lc_lock.lock();
+                    lu_counter++;
+                    lc_lock.unlock();
+                    // The inner unlock must keep the lock held
+                    lu_counter++;
+                    lc_lock.unlock();
+                }
+            }));
+    }
+
+    for(auto &lr_thread : lc_threads)
+    {
+        lr_thread.join();
+    }
+
+    EXPECT_EQ(lu_counter, 2 * lu_iterations * lu_threads_count);
+}
+
+TEST(SpinLockTests, TryLockConcurrency)
+{
+    constexpr uint32_t lu_iterations = 10'000;
+
+    uint32_t         lu_counter      = 0;
+    kit::c_spin_lock lc_lock;
+
+    uint32_t lu_threads_count = std::thread::hardware_concurrency();
+    if(lu_threads_count < 2)
+    {
+        lu_threads_count = 2;
+    }
+
+    std::latch               lc_start(lu_threads_count);
+    std::vector<std::thread> lc_threads;
+    for(uint32_t lu_t = 0; lu_t < lu_threads_count; lu_t++)
+    {
+        lc_threads.push_back(std::thread(
+            [&]
+            {
+                // Start together so the threads really contend
+                lc_start.arrive_and_wait();
+                for(uint32_t lu_i = 0; lu_i < lu_iterations; lu_i++)
+                {
+                    while(!lc_lock.try_lock())
+                    {
+                        std::this_thread::yield();
+                    }
+
+                    // Recursive entry must succeed for the owner
+                    if(lc_lock.try_lock())
+                    {
+                        lu_counter++;
+                        lc_lock.unlock();
+                    }
+                    lc_lock.unlock();
+                }
+            }));
+    }
+
+    for(auto &lr_thread : lc_threads)
+    {
+        lr_thread.join();
+    }
+
+    EXPECT_EQ(lu_counter, lu_iterations * lu_threads_count);
+}
+
+TEST(SpinLockTests, UnlockByNonOwnerAsserts)
+{
+#if defined(NDEBUG)
+    GTEST_SKIP() << "assert() is compiled out in release builds";
+#else
+    kit::c_spin_lock lc_lock;
+    lc_lock.lock();
+    EXPECT_DEATH(std::thread([&] { lc_lock.unlock(); }).join(), "Thread ID mismatch");
+    lc_lock.unlock();
+#endif
 }
