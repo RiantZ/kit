@@ -71,4 +71,13 @@ bool set_thread_priority(e_thread_priority ie_priority)
     return pthread_setschedparam(pthread_self(), SCHED_OTHER, &lo_param) == 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint64_t get_thread_id()
+{
+    // SYS_gettid on XNU reads per-thread credentials, and syscall() is deprecated.
+    uint64_t lu_id = 0;
+    pthread_threadid_np(nullptr, &lu_id);
+    return lu_id;
+}
+
 } // namespace kit
