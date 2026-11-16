@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [0.2.1] - 2026-11-16
+
+### Added
+- `thread.hpp` - `kit::get_thread_id()`: OS thread ID of the calling thread (Linux `syscall(SYS_gettid)`, macOS `pthread_threadid_np`, Windows `GetCurrentThreadId`); tests in `tests/thread_test.hpp`
+
 ## [0.2.0] - 2026-06-24
 
 ### Added

@@ -77,4 +77,10 @@ bool set_thread_priority(e_thread_priority ie_priority)
     return SetThreadPriority(GetCurrentThread(), map_to_native(ie_priority)) != 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint64_t get_thread_id()
+{
+    return static_cast<uint64_t>(GetCurrentThreadId());
+}
+
 } // namespace kit

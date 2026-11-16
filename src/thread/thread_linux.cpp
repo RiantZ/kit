@@ -2,6 +2,8 @@
 
 #include <cerrno>
 #include <sys/resource.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 namespace kit
 {
@@ -66,6 +68,13 @@ bool set_thread_priority(e_thread_priority ie_priority)
     }
 
     return setpriority(PRIO_PROCESS, 0, ga_nice[ie_priority]) == 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint64_t get_thread_id()
+{
+    // gettid() needs glibc 2.30+; the raw syscall works with any libc.
+    return static_cast<uint64_t>(syscall(SYS_gettid));
 }
 
 } // namespace kit

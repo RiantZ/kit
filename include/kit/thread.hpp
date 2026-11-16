@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace kit
 {
 
@@ -23,5 +25,10 @@ bool get_thread_priority(e_thread_priority &oe_priority);
 /// Sets the scheduling priority of the calling thread.
 /// @return true on success. Raising priority may fail without privileges.
 bool set_thread_priority(e_thread_priority ie_priority);
+
+/// Returns the OS thread ID of the calling thread: the value debuggers and system tools show.
+/// Unique among live threads; Linux and Windows may reuse it after the thread exits.
+/// @return the OS thread ID.
+uint64_t get_thread_id();
 
 } // namespace kit
