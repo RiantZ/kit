@@ -9,6 +9,7 @@
 #include "event_test.hpp"
 #include "thread_test.hpp"
 #include "file_test.hpp"
+#include "utf_test.hpp"
 
 TEST(VersionTest, ReturnsNonEmpty)
 {

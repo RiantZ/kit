@@ -18,17 +18,18 @@ enum e_thread_priority
     e_tp_time_critical
 };
 
-/// Reads the scheduling priority of the calling thread.
-/// @return true on success (oe_priority set), false on failure.
+/// @brief Reads the scheduling priority of the calling thread.
+/// @param oe_priority Receives the priority.
+/// @return true on success, false on failure.
 bool get_thread_priority(e_thread_priority &oe_priority);
 
-/// Sets the scheduling priority of the calling thread.
-/// @return true on success. Raising priority may fail without privileges.
+/// @brief Sets the scheduling priority of the calling thread.
+/// @param ie_priority The new priority.
+/// @return true on success; raising the priority may fail without privileges.
 bool set_thread_priority(e_thread_priority ie_priority);
 
-/// Returns the OS thread ID of the calling thread: the value debuggers and system tools show.
-/// Unique among live threads; Linux and Windows may reuse it after the thread exits.
-/// @return the OS thread ID.
+/// @brief Reads the OS thread ID of the calling thread: the value debuggers and system tools show.
+/// @return The thread ID; unique among live threads, Linux and Windows may reuse it after the thread exits.
 uint64_t get_thread_id();
 
 } // namespace kit

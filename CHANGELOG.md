@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [0.3.0] - 2026-11-17
+
+### Added
+- `utf.hpp` - `kit::cut_utf8` / `kit::cut_utf16` / `kit::cut_utf32`: cut a string length to a limit without splitting a character; `wchar_t` overloads (UTF-16 on Windows, UTF-32 on Linux/macOS); exposed via the `kit/kit.h` aggregator header; tests in `tests/utf_test.hpp`
+
 ## [0.2.1] - 2026-11-16
 
 ### Added

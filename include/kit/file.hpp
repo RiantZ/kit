@@ -69,51 +69,121 @@ struct s_iovec
 class KIT_API c_file_base
 {
 public:
+    /// @brief Destroys the file object.
     virtual ~c_file_base()                                                                               = default;
 
-    // Reference counting. add_ref() returns the new count; release() returns
-    // the new count as well and destroys the object when it reaches zero.
+    /// @brief Adds a reference.
+    /// @return The new reference count.
     virtual int32_t add_ref()                                                                            = 0;
+
+    /// @brief Drops a reference and destroys the object when the count reaches zero.
+    /// @return The new reference count.
     virtual int32_t release()                                                                            = 0;
 
     // Lifecycle.
+
+    /// @brief Tells whether the file is open.
+    /// @return true if the file is open.
     virtual bool is_open() const                                                                         = 0;
+
+    /// @brief Opens a file; success resets get_last_error() to 0.
+    /// @param ir_path The file path.
+    /// @param ie_mode What to do when the file exists or is missing.
+    /// @param iu_flags A combination of e_file_flag values.
+    /// @return true on success; on failure get_last_error() gives the reason.
     virtual bool open(const std::filesystem::path &ir_path, e_file_open_mode ie_mode, uint32_t iu_flags) = 0;
+
+    /// @brief Closes the file; does nothing if it is not open.
+    /// @param ib_flush true to sync the data to disk before closing.
+    /// @return true on success, false if the sync or the close failed.
     virtual bool close(bool ib_flush)                                                                    = 0;
 
     // Stream I/O. Uses the internal file position; not safe for parallel
     // callers on the same instance.
+
+    /// @brief Reads up to iz_size bytes at the current position and moves it forward.
+    /// @param op_buf Receives the data.
+    /// @param iz_size The number of bytes to read.
+    /// @return The number of bytes read; fewer at the end of the file or on an error.
     virtual size_t read(void *op_buf, size_t iz_size)                                                    = 0;
+
+    /// @brief Writes iz_size bytes at the current position and moves it forward.
+    /// @param ip_buf The data to write.
+    /// @param iz_size The number of bytes to write.
+    /// @param ib_flush true to sync the data to disk after writing.
+    /// @return The number of bytes written; fewer on an error.
     virtual size_t write(const void *ip_buf, size_t iz_size, bool ib_flush)                              = 0;
 
     // Positional I/O. Does not touch the internal position and is safe for
     // parallel readers on the same instance on POSIX. On Windows the handle's
     // implicit file pointer still advances, so mixing stream and positional
     // I/O on the same instance from different threads is a usage error.
+
+    /// @brief Reads up to iz_size bytes at iu_offset without moving the current position.
+    /// @param iu_offset The file offset to read from.
+    /// @param op_buf Receives the data.
+    /// @param iz_size The number of bytes to read.
+    /// @return The number of bytes read; fewer at the end of the file or on an error.
     virtual size_t read_at(uint64_t iu_offset, void *op_buf, size_t iz_size)                             = 0;
+
+    /// @brief Writes iz_size bytes at iu_offset without moving the current position.
+    /// @param iu_offset The file offset to write at.
+    /// @param ip_buf The data to write.
+    /// @param iz_size The number of bytes to write.
+    /// @return The number of bytes written; fewer on an error.
     virtual size_t write_at(uint64_t iu_offset, const void *ip_buf, size_t iz_size)                      = 0;
 
     // Scatter/gather at the current position. On POSIX this is a single
     // readv/writev syscall; on Windows it is emulated with a per-buffer
     // ReadFile/WriteFile loop with identical observable semantics.
+
+    /// @brief Reads into several buffers, in order, at the current position and moves it forward.
+    /// @param ip_iov The buffers.
+    /// @param iz_count The number of buffers.
+    /// @return The number of bytes read, 0 on an error.
     virtual size_t read_v(const s_iovec *ip_iov, size_t iz_count)                                        = 0;
+
+    /// @brief Writes several buffers, in order, at the current position and moves it forward.
+    /// @param ip_iov The buffers.
+    /// @param iz_count The number of buffers.
+    /// @param ib_flush true to sync the data to disk after writing.
+    /// @return The number of bytes written, 0 on an error.
     virtual size_t write_v(const s_iovec *ip_iov, size_t iz_count, bool ib_flush)                        = 0;
 
     // Position / size.
-    virtual bool     set_position(uint64_t iu_offset)                                                    = 0;
+
+    /// @brief Moves the current position.
+    /// @param iu_offset The new position from the start of the file.
+    /// @return true on success.
+    virtual bool set_position(uint64_t iu_offset)                                                        = 0;
+
+    /// @brief Reads the current position.
+    /// @return The position from the start of the file, 0 on an error.
     virtual uint64_t get_position() const                                                                = 0;
+
+    /// @brief Reads the file size.
+    /// @return The size in bytes, 0 on an error.
     virtual uint64_t get_size() const                                                                    = 0;
 
     // Logical size / on-disk preallocation.
-    virtual bool set_size(uint64_t iu_size)    = 0; // truncate or extend
-    virtual bool preallocate(uint64_t iu_size) = 0; // reserve space on disk
 
-    // Durability: fsync / FlushFileBuffers on the underlying descriptor.
-    virtual bool sync()                        = 0;
+    /// @brief Truncates or extends the file to iu_size bytes.
+    /// @param iu_size The new size in bytes.
+    /// @return true on success.
+    virtual bool set_size(uint64_t iu_size)                                                              = 0;
 
-    // Last errno / GetLastError observed by this instance. Reset to zero on
-    // successful open().
-    virtual int get_last_error() const         = 0;
+    /// @brief Reserves disk space for iu_size bytes and extends the file to that size.
+    /// @param iu_size The size in bytes.
+    /// @return true on success.
+    virtual bool preallocate(uint64_t iu_size)                                                           = 0;
+
+    /// @brief Syncs the file data to disk: fsync / FlushFileBuffers.
+    /// @return true on success.
+    virtual bool sync()                                                                                  = 0;
+
+    /// @brief Reads the last errno / GetLastError seen by this object; a successful open() resets it to 0.
+    /// @return The error code.
+    virtual int get_last_error() const                                                                   = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,34 +196,105 @@ class KIT_API c_file final : public c_file_base
 public:
     struct s_impl;
 
+    /// @brief Creates a closed file object.
     c_file();
+
+    /// @brief Closes the file without a sync; call close(true) or sync() first when the data must reach the disk.
     ~c_file() override;
 
+    /// @brief Adds a reference.
+    /// @return The new reference count.
     int32_t add_ref() override;
+
+    /// @brief Drops a reference and destroys the object when the count reaches zero.
+    /// @return The new reference count.
     int32_t release() override;
 
+    /// @brief Tells whether the file is open.
+    /// @return true if the file is open.
     bool is_open() const override;
+
+    /// @brief Opens a file; success resets get_last_error() to 0.
+    /// @param ir_path The file path.
+    /// @param ie_mode What to do when the file exists or is missing.
+    /// @param iu_flags A combination of e_file_flag values.
+    /// @return true on success; on failure get_last_error() gives the reason.
     bool open(const std::filesystem::path &ir_path, e_file_open_mode ie_mode, uint32_t iu_flags) override;
+
+    /// @brief Closes the file; does nothing if it is not open.
+    /// @param ib_flush true to sync the data to disk before closing.
+    /// @return true on success, false if the sync or the close failed.
     bool close(bool ib_flush) override;
 
+    /// @brief Reads up to iz_size bytes at the current position and moves it forward.
+    /// @param op_buf Receives the data.
+    /// @param iz_size The number of bytes to read.
+    /// @return The number of bytes read; fewer at the end of the file or on an error.
     size_t read(void *op_buf, size_t iz_size) override;
+
+    /// @brief Writes iz_size bytes at the current position and moves it forward.
+    /// @param ip_buf The data to write.
+    /// @param iz_size The number of bytes to write.
+    /// @param ib_flush true to sync the data to disk after writing.
+    /// @return The number of bytes written; fewer on an error.
     size_t write(const void *ip_buf, size_t iz_size, bool ib_flush) override;
 
+    /// @brief Reads up to iz_size bytes at iu_offset without moving the current position.
+    /// @param iu_offset The file offset to read from.
+    /// @param op_buf Receives the data.
+    /// @param iz_size The number of bytes to read.
+    /// @return The number of bytes read; fewer at the end of the file or on an error.
     size_t read_at(uint64_t iu_offset, void *op_buf, size_t iz_size) override;
+
+    /// @brief Writes iz_size bytes at iu_offset without moving the current position.
+    /// @param iu_offset The file offset to write at.
+    /// @param ip_buf The data to write.
+    /// @param iz_size The number of bytes to write.
+    /// @return The number of bytes written; fewer on an error.
     size_t write_at(uint64_t iu_offset, const void *ip_buf, size_t iz_size) override;
 
+    /// @brief Reads into several buffers, in order, at the current position and moves it forward.
+    /// @param ip_iov The buffers.
+    /// @param iz_count The number of buffers.
+    /// @return The number of bytes read, 0 on an error.
     size_t read_v(const s_iovec *ip_iov, size_t iz_count) override;
+
+    /// @brief Writes several buffers, in order, at the current position and moves it forward.
+    /// @param ip_iov The buffers.
+    /// @param iz_count The number of buffers.
+    /// @param ib_flush true to sync the data to disk after writing.
+    /// @return The number of bytes written, 0 on an error.
     size_t write_v(const s_iovec *ip_iov, size_t iz_count, bool ib_flush) override;
 
-    bool     set_position(uint64_t iu_offset) override;
+    /// @brief Moves the current position.
+    /// @param iu_offset The new position from the start of the file.
+    /// @return true on success.
+    bool set_position(uint64_t iu_offset) override;
+
+    /// @brief Reads the current position.
+    /// @return The position from the start of the file, 0 on an error.
     uint64_t get_position() const override;
+
+    /// @brief Reads the file size.
+    /// @return The size in bytes, 0 on an error.
     uint64_t get_size() const override;
 
+    /// @brief Truncates or extends the file to iu_size bytes.
+    /// @param iu_size The new size in bytes.
+    /// @return true on success.
     bool set_size(uint64_t iu_size) override;
+
+    /// @brief Reserves disk space for iu_size bytes and extends the file to that size.
+    /// @param iu_size The size in bytes.
+    /// @return true on success.
     bool preallocate(uint64_t iu_size) override;
 
+    /// @brief Syncs the file data to disk: fsync / FlushFileBuffers.
+    /// @return true on success.
     bool sync() override;
 
+    /// @brief Reads the last errno / GetLastError seen by this object; a successful open() resets it to 0.
+    /// @return The error code.
     int get_last_error() const override;
 
 private:
