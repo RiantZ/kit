@@ -81,6 +81,7 @@ kit/
 | `kit/types.h` | portable, header-only | Type aliases (`tBOOL`, `tUINT8`, `tUINT16`, `tUINT32`, `tINT64`, `tXCHAR`), `TRUE`/`FALSE` constants |
 | `kit/list.hpp` | portable, header-only | Doubly-linked list `kit::c_lst<T>` with pool-based allocation. Supports iterators, move semantics, initializer lists |
 | `kit/shared.h` | platform-dependent, header-only | Shared memory with named locking. Linux: POSIX `shm_open`/`sem_open`. Windows: `CreateFileMapping`/`CreateMutex` |
+| `kit/utf.hpp` | portable, header-only | Cut a string length to a limit on a character boundary: `kit::cut_utf8`, `kit::cut_utf16`, `kit::cut_utf32`; `wchar_t` overloads (UTF-16 on Windows, UTF-32 on Linux/macOS) |
 
 ## Build (native)
 

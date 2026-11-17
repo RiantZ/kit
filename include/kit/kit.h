@@ -11,6 +11,7 @@
 #include "kit/event.hpp"
 #include "kit/thread.hpp"
 #include "kit/file.hpp"
+#include "kit/utf.hpp"
 
 #ifdef __cplusplus
 extern "C"
