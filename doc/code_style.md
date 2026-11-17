@@ -105,6 +105,22 @@ Examples:
 
 A comment is read by a person who has no time for long or tangled text (*Objective #1*).
 
+### Doc comments
+Functions and methods declared in headers are documented with `///` Doxygen tags; IDEs show them as hints for the function and for each argument.
+ * `@brief` in one line
+ * `@param <name> <text>` for every parameter; the `i` / `o` / `io` prefix already gives the direction
+ * `@return <text>` unless the function is `void`
+ * the "one line, two at most" limit applies to each tag, not to the whole block
+
+```cpp
+/// @brief Cuts a UTF-8 string length to a limit without splitting a character.
+/// @param ip_str The string; read only when iz_len > iz_max.
+/// @param iz_len The string length in bytes.
+/// @param iz_max The limit in bytes.
+/// @return iz_len if it fits, otherwise iz_max moved back to the start of the character it falls in.
+size_t cut_utf8(const char *ip_str, size_t iz_len, size_t iz_max);
+```
+
 # Examples
 ```cpp
 #include "my_header_file.h"
