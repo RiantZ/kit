@@ -9,6 +9,9 @@
 namespace kit
 {
 
+/// @brief Swaps the byte order of a 16-bit value.
+/// @param iu_val The value to swap.
+/// @return iu_val with its bytes in reverse order.
 inline uint16_t bswap16(uint16_t iu_val)
 {
 #if defined(_MSC_VER)
@@ -18,6 +21,9 @@ inline uint16_t bswap16(uint16_t iu_val)
 #endif
 }
 
+/// @brief Swaps the byte order of a 32-bit value.
+/// @param iu_val The value to swap.
+/// @return iu_val with its bytes in reverse order.
 inline uint32_t bswap32(uint32_t iu_val)
 {
 #if defined(_MSC_VER)
@@ -27,6 +33,9 @@ inline uint32_t bswap32(uint32_t iu_val)
 #endif
 }
 
+/// @brief Swaps the byte order of a 64-bit value.
+/// @param iu_val The value to swap.
+/// @return iu_val with its bytes in reverse order.
 inline uint64_t bswap64(uint64_t iu_val)
 {
 #if defined(_MSC_VER)

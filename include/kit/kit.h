@@ -18,6 +18,8 @@ extern "C"
 {
 #endif
 
+    /// @brief Reads the version of the kit library the program runs with.
+    /// @return The version string, e.g. "0.3.0".
     KIT_API const char *kit_version(void);
 
 #ifdef __cplusplus

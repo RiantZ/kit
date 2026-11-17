@@ -273,7 +273,7 @@ public:
     }
 
     /// @brief Move constructor
-    /// @param ir_other The list to move from
+    /// @param iv_other The list to move from
     c_lst(c_lst &&iv_other) noexcept
     {
         mp_pool_head       = iv_other.mp_pool_head;
@@ -521,7 +521,7 @@ public:
     }
 
     /// @brief Adds a new element to the end of the list
-    /// @param iv_data The data to add
+    /// @param ir_data The data to add
     inline void push_last(const t_lst_value_type &ir_data)
     {
         s_item *lp_new_cell = allocate_item();
@@ -552,7 +552,7 @@ public:
     }
 
     /// @brief Adds a new element to the beginning of the list
-    /// @param iv_data The data to add
+    /// @param ir_data The data to add
     inline void push_first(const t_lst_value_type &ir_data)
     {
         s_item *lp_new_cell = allocate_item();
@@ -583,7 +583,7 @@ public:
     }
 
     /// @brief Adds a new element to the beginning of the list using move semantics
-    /// @param iv_data The data to move into the list
+    /// @param ir_data The data to move into the list
     inline void push_first(t_lst_value_type &&ir_data)
     {
         s_item *lp_new_cell = allocate_item();
@@ -614,7 +614,7 @@ public:
     }
 
     /// @brief Removes all elements from the list and applies a cleanup function to each
-    /// @param if_callback Lambda function to handle resource cleanup for each element's data
+    /// @param il_callback Lambda function to handle resource cleanup for each element's data
     /// @param ie_pool_policy Whether to release surplus pool segments afterwards (default: trim)
     template <class t_fn>
     inline void clear(t_fn il_callback, e_c_lst_pool_policy ie_pool_policy = e_c_lst_pool_policy::e_trim)
@@ -667,7 +667,7 @@ public:
 
     /// @brief Removes the element pointed to by the iterator and applies a cleanup function
     /// @param ir_it Iterator pointing to the element to remove
-    /// @param if_callback Lambda function to handle resource cleanup for the element's data
+    /// @param il_callback Lambda function to handle resource cleanup for the element's data
     /// @return Iterator pointing to the next element after removal
     template <class t_fn> inline t_iterator remove(const t_iterator &ir_it, t_fn il_callback)
     {
@@ -747,7 +747,7 @@ public:
 
     /// @brief Inserts a new element after the specified iterator position
     /// @param ir_it Iterator pointing to the element after which to insert
-    /// @param iv_data The data to insert
+    /// @param ir_data The data to insert
     /// @return Iterator pointing to the newly inserted element
     inline t_iterator push_next(const t_iterator &ir_it, const t_lst_value_type &ir_data)
     {
@@ -828,7 +828,7 @@ private:
     }
 
     /// @brief Releases memory for a pool segment
-    /// @param iop_Pool Pointer to the pool segment to free
+    /// @param iop_pool Pointer to the pool segment to free
     void free_pool_block(s_pool_block *iop_pool)
     {
         if(iop_pool)
@@ -863,7 +863,7 @@ private:
     }
 
     /// @brief Returns a cell back to the memory pool
-    /// @param i_pCell Pointer to the cell to free
+    /// @param ip_cell Pointer to the cell to free
     void free_item(s_item *ip_cell)
     {
         ip_cell->mp_prev   = nullptr;
